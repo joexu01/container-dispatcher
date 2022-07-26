@@ -1,0 +1,235 @@
+definitions:
+  dto.CPUList:
+    properties:
+      count:
+        type: integer
+      cpuinfo:
+        items:
+          $ref: '#/definitions/dto.CPUStatus'
+        type: array
+    type: object
+  dto.CPUStatus:
+    properties:
+      cores:
+        type: integer
+      maxTurbo:
+        type: number
+      modelName:
+        type: string
+      vendorID:
+        type: string
+    type: object
+  dto.GPUList:
+    properties:
+      count:
+        type: integer
+      cudadriverVersion:
+        type: string
+      driverVersion:
+        type: string
+      gpuinfo:
+        items:
+          $ref: '#/definitions/dto.GPUStatus'
+        type: array
+    type: object
+  dto.GPUStatus:
+    properties:
+      deviceName:
+        type: string
+      memoryTotal:
+        type: integer
+      memoryUsed:
+        type: integer
+      powerDefaultLimit:
+        type: integer
+      powerUsage:
+        type: integer
+      processInfo:
+        items:
+          $ref: '#/definitions/dto.ProcessInfoCombined'
+        type: array
+      uuid:
+        type: string
+    type: object
+  dto.NewUserInput:
+    properties:
+      email:
+        type: string
+      raw_password:
+        type: string
+      user_role:
+        type: integer
+      username:
+        type: string
+    required:
+    - email
+    - raw_password
+    - user_role
+    - username
+    type: object
+  dto.ProcessInfoCombined:
+    properties:
+      commandLine:
+        type: string
+      pid:
+        type: integer
+      usedGpuMemory:
+        type: integer
+      user:
+        type: string
+    type: object
+  dto.UserLoginInput:
+    properties:
+      password:
+        description: 管理员密码
+        example: "12345678"
+        type: string
+      username:
+        description: 管理员用户名
+        example: joexu01
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  dto.UserLoginOutput:
+    properties:
+      token:
+        description: 返回的Token
+        example: token
+        type: string
+    type: object
+  middleware.Response:
+    properties:
+      data: {}
+      err_msg:
+        type: string
+      errno:
+        type: integer
+      stack: {}
+      trace_id: {}
+    type: object
+info:
+  contact: {}
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: 就是用户登录呗
+      parameters:
+      - description: 用户登录输入
+        in: body
+        name: struct
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserLoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserLoginOutput'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 用户登录
+      tags:
+      - user
+  /resource/cpu:
+    get:
+      description: 获取CPU基本的状态
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CPUList'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 获取CPU基本的状态
+      tags:
+      - resource
+  /resource/gpu:
+    get:
+      description: 获取GPU基本的状态包含个数、占用率等
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.GPUList'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 获取GPU基本的状态
+      tags:
+      - resource
+  /user/logout:
+    get:
+      consumes:
+      - application/json
+      description: 就是用户登出呗
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/middleware.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 用户登出
+      tags:
+      - user
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      description: 用户注册
+      parameters:
+      - description: 新建用户输入
+        in: body
+        name: struct
+        required: true
+        schema:
+          $ref: '#/definitions/dto.NewUserInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/middleware.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 用户注册（仅限管理员）
+      tags:
+      - user
+swagger: "2.0"

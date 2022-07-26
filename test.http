@@ -1,0 +1,12 @@
+POST http://localhost:8880/user/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "password": "12345678",
+  "username": "joexu01"
+}
+###
+
+GET http://localhost:8880/user-logout/logout
+Accept: application/json
