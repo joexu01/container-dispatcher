@@ -16,6 +16,84 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/container/list": {
+            "get": {
+                "description": "获取我的容器列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "container"
+                ],
+                "summary": "获取我的容器列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page no",
+                        "name": "page_no",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/image/list": {
+            "get": {
+                "description": "获取镜像列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "image"
+                ],
+                "summary": "获取镜像列表",
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ImageList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/login": {
             "post": {
                 "description": "就是用户登录呗",
@@ -82,19 +160,7 @@ const docTemplate = `{
                     "200": {
                         "description": "success",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/middleware.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/dto.CPUList"
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/middleware.Response"
                         }
                     },
                     "500": {
@@ -133,6 +199,46 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/list": {
+            "get": {
+                "description": "用户列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "用户列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page no",
+                        "name": "page_no",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.Response"
                         }
                     },
                     "500": {
@@ -215,50 +321,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.CPUList": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "cpuinfo": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CPUStatus"
-                    }
-                }
-            }
-        },
-        "dto.CPUStatus": {
-            "type": "object",
-            "properties": {
-                "cores": {
-                    "type": "integer"
-                },
-                "maxTurbo": {
-                    "type": "number"
-                },
-                "modelName": {
-                    "type": "string"
-                },
-                "vendorID": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.GPUList": {
             "type": "object",
             "properties": {
                 "count": {
                     "type": "integer"
                 },
-                "cudadriverVersion": {
+                "cuda_driver_version": {
                     "type": "string"
                 },
-                "driverVersion": {
+                "driver_version": {
                     "type": "string"
                 },
-                "gpuinfo": {
+                "gpu_info": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.GPUStatus"
@@ -269,22 +344,22 @@ const docTemplate = `{
         "dto.GPUStatus": {
             "type": "object",
             "properties": {
-                "deviceName": {
+                "device_name": {
                     "type": "string"
                 },
-                "memoryTotal": {
+                "memory_total": {
                     "type": "integer"
                 },
-                "memoryUsed": {
+                "memory_used": {
                     "type": "integer"
                 },
-                "powerDefaultLimit": {
+                "power_default_limit": {
                     "type": "integer"
                 },
-                "powerUsage": {
+                "power_usage": {
                     "type": "integer"
                 },
-                "processInfo": {
+                "process_info": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ProcessInfoCombined"
@@ -292,6 +367,34 @@ const docTemplate = `{
                 },
                 "uuid": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ImageInfo": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "image_id": {
+                    "type": "string"
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ImageList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ImageInfo"
+                    }
                 }
             }
         },
@@ -321,13 +424,13 @@ const docTemplate = `{
         "dto.ProcessInfoCombined": {
             "type": "object",
             "properties": {
-                "commandLine": {
+                "command_line": {
                     "type": "string"
                 },
                 "pid": {
                     "type": "integer"
                 },
-                "usedGpuMemory": {
+                "used_gpu_memory": {
                     "type": "integer"
                 },
                 "user": {

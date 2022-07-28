@@ -83,6 +83,13 @@ func InitModule(configPath string, modules []string) error {
 		}
 	}
 
+	// 加载docker配置并初始化实例
+	if InArrayString("docker", modules) {
+		if err := InitDockerConf(GetConfPath("docker")); err != nil {
+			fmt.Printf("[ERROR] %s%s\n", time.Now().Format(TimeFormat), " InitDockerConf:"+err.Error())
+		}
+	}
+
 	// 设置时区
 	if location, err := time.LoadLocation(ConfBase.TimeLocation); err != nil {
 		return err

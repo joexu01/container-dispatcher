@@ -1,0 +1,4 @@
+[list]
+[list.default]
+context_name="default"
+docker_endpoint="unix:///var/run/docker.sock"

@@ -66,6 +66,15 @@ type RedisConf struct {
 	WriteTimeout int      `mapstructure:"write_timeout"`
 }
 
+type DockerMapConf struct {
+	List map[string]*DockerConf `mapstructure:"list"`
+}
+
+type DockerConf struct {
+	DockerEndpoint string `mapstructure:"docker_endpoint"`
+	ContextName    string `mapstructure:"context_name"`
+}
+
 //全局变量
 
 var ConfBase *BaseConf
@@ -75,6 +84,7 @@ var DBDefaultPool *sql.DB
 var GORMDefaultPool *gorm.DB
 var ConfRedis *RedisConf
 var ConfRedisMap *RedisMapConf
+var ConfDockerMap *DockerMapConf
 var ViperConfMap map[string]*viper.Viper
 
 // GetBaseConf 获取基本配置信息
@@ -145,6 +155,16 @@ func InitRedisConf(path string) error {
 		return err
 	}
 	ConfRedisMap = ConfRedis
+	return nil
+}
+
+func InitDockerConf(path string) error {
+	ConfDocker := &DockerMapConf{}
+	err := ParseConfig(path, ConfDocker)
+	if err != nil {
+		return err
+	}
+	ConfDockerMap = ConfDocker
 	return nil
 }
 

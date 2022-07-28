@@ -83,5 +83,29 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		controller.ResourceControllerRegister(resourceGroup)
 	}
 
+	imageGroup := router.Group("/image")
+	imageGroup.Use(
+		sessions.Sessions("gin-session", store),
+		middleware.RecoveryMiddleware(),
+		middleware.RequestLog(),
+		middleware.ValidatorBasicMiddleware(),
+		middleware.SessionAuthMiddleware(),
+	)
+	{
+		controller.ImageControllerRegister(imageGroup)
+	}
+
+	ctnGroup := router.Group("/container")
+	ctnGroup.Use(
+		sessions.Sessions("gin-session", store),
+		middleware.RecoveryMiddleware(),
+		middleware.RequestLog(),
+		middleware.ValidatorBasicMiddleware(),
+		middleware.SessionAuthMiddleware(),
+	)
+	{
+		controller.ContainerControllerRegister(ctnGroup)
+	}
+
 	return router
 }

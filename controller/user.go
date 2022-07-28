@@ -20,6 +20,7 @@ func UserLogoutRegister(group *gin.RouterGroup) {
 	user := &UserLogoutController{}
 	group.GET("/logout", user.UserLogout)
 	group.POST("/register", user.UserRegister)
+	group.GET("/list", user.UserList)
 }
 
 // UserLogout godoc
@@ -108,4 +109,60 @@ func (u *UserLogoutController) UserRegister(c *gin.Context) {
 	}
 
 	middleware.ResponseSuccess(c, "ok")
+}
+
+// UserList godoc
+// @Summary      用户列表
+// @Description  用户列表
+// @Tags         user
+// @Produce      json
+// @Param     page_size   query   int   false   "page size"
+// @Param     page_no     query   int   false   "page no"
+// @Success      200  {object}  middleware.Response "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /user/list [get]
+func (u *UserLogoutController) UserList(c *gin.Context) {
+
+	params := &dto.UserListQueryInput{}
+	if err := params.BindValidParam(c); err != nil {
+		middleware.ResponseError(c, 2000, err)
+		return
+	}
+
+	session := sessions.Default(c)
+	sessStr, ok := session.Get(public.UserSessionKey).(string)
+	if !ok {
+		middleware.ResponseError(c, 2001, errors.New("login before execute this operation"))
+		return
+	}
+
+	sessInfo := &dto.UserSessionInfo{}
+
+	err := json.Unmarshal([]byte(sessStr), sessInfo)
+	if err != nil {
+		middleware.ResponseError(c, 2002, errors.New("cannot find login record"))
+		return
+	}
+
+	db, err := lib.GetGormPool("default")
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2003, err, "")
+		return
+	}
+
+	search := &dao.User{Id: sessInfo.Id}
+	user, err := search.Find(c, db, search)
+	if err != nil || user.UserRole != public.UserRoleAdmin {
+		middleware.ResponseError(c, 2004, errors.New("an error occurred during fetching user profile"))
+		return
+	}
+
+	handler := &dao.User{}
+	_, userList, err := handler.PageList(c, db, params)
+	if err != nil {
+		middleware.ResponseError(c, 2005, err)
+		return
+	}
+
+	middleware.ResponseSuccess(c, userList)
 }

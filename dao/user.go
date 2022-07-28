@@ -69,6 +69,18 @@ func (u *User) Find(_ *gin.Context, tx *gorm.DB, search *User) (*User, error) {
 //
 //}
 
+func (u *User) PageList(_ *gin.Context, tx *gorm.DB, param *dto.UserListQueryInput) (total int64, userList []User, err error) {
+	query := tx.Table(u.TableName()).Joins("join role on user.user_role = role.id").
+		Where("user.is_delete=0")
+
+	offset := (param.PageNo - 1) * param.PageSize
+	if err = query.Limit(param.PageSize).Offset(offset).Order("id desc").Find(&userList).Error; err != gorm.ErrRecordNotFound && err != nil {
+		return 0, nil, err
+	}
+	query.Limit(param.PageSize).Offset(offset).Count(&total)
+	return total, userList, nil
+}
+
 func (u *User) Save(_ *gin.Context, tx *gorm.DB) error {
 	return tx.Save(u).Error
 }

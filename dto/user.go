@@ -59,3 +59,12 @@ type User struct {
 	Password string `json:"password" gorm:"column:hashed_password" validate:"required"`
 	Email    string `json:"email" gorm:"column:email" validate:"required"`
 }
+
+type UserListQueryInput struct {
+	PageNo   int `json:"page_no" form:"page_no" comment:"页数" example:"1" validate:"required"`        //页数
+	PageSize int `json:"page_size" form:"page_size" comment:"每页条数" example:"20" validate:"required"` //每页条数
+}
+
+func (param *UserListQueryInput) BindValidParam(c *gin.Context) error {
+	return public.GetValidParamsDefault(c, param)
+}

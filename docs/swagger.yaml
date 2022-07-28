@@ -1,55 +1,53 @@
 definitions:
-  dto.CPUList:
-    properties:
-      count:
-        type: integer
-      cpuinfo:
-        items:
-          $ref: '#/definitions/dto.CPUStatus'
-        type: array
-    type: object
-  dto.CPUStatus:
-    properties:
-      cores:
-        type: integer
-      maxTurbo:
-        type: number
-      modelName:
-        type: string
-      vendorID:
-        type: string
-    type: object
   dto.GPUList:
     properties:
       count:
         type: integer
-      cudadriverVersion:
+      cuda_driver_version:
         type: string
-      driverVersion:
+      driver_version:
         type: string
-      gpuinfo:
+      gpu_info:
         items:
           $ref: '#/definitions/dto.GPUStatus'
         type: array
     type: object
   dto.GPUStatus:
     properties:
-      deviceName:
+      device_name:
         type: string
-      memoryTotal:
+      memory_total:
         type: integer
-      memoryUsed:
+      memory_used:
         type: integer
-      powerDefaultLimit:
+      power_default_limit:
         type: integer
-      powerUsage:
+      power_usage:
         type: integer
-      processInfo:
+      process_info:
         items:
           $ref: '#/definitions/dto.ProcessInfoCombined'
         type: array
       uuid:
         type: string
+    type: object
+  dto.ImageInfo:
+    properties:
+      created:
+        type: string
+      image_id:
+        type: string
+      repository:
+        type: string
+      size:
+        type: string
+    type: object
+  dto.ImageList:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/dto.ImageInfo'
+        type: array
     type: object
   dto.NewUserInput:
     properties:
@@ -69,11 +67,11 @@ definitions:
     type: object
   dto.ProcessInfoCombined:
     properties:
-      commandLine:
+      command_line:
         type: string
       pid:
         type: integer
-      usedGpuMemory:
+      used_gpu_memory:
         type: integer
       user:
         type: string
@@ -112,6 +110,54 @@ definitions:
 info:
   contact: {}
 paths:
+  /container/list:
+    get:
+      description: 获取我的容器列表
+      parameters:
+      - description: page size
+        in: query
+        name: page_size
+        type: integer
+      - description: page no
+        in: query
+        name: page_no
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/middleware.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 获取我的容器列表
+      tags:
+      - container
+  /image/list:
+    get:
+      description: 获取镜像列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ImageList'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 获取镜像列表
+      tags:
+      - image
   /login:
     post:
       consumes:
@@ -152,12 +198,7 @@ paths:
         "200":
           description: success
           schema:
-            allOf:
-            - $ref: '#/definitions/middleware.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.CPUList'
-              type: object
+            $ref: '#/definitions/middleware.Response'
         "500":
           description: Internal Server Error
           schema:
@@ -187,6 +228,32 @@ paths:
       summary: 获取GPU基本的状态
       tags:
       - resource
+  /user/list:
+    get:
+      description: 用户列表
+      parameters:
+      - description: page size
+        in: query
+        name: page_size
+        type: integer
+      - description: page no
+        in: query
+        name: page_no
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/middleware.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 用户列表
+      tags:
+      - user
   /user/logout:
     get:
       consumes:
