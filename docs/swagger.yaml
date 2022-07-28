@@ -76,6 +76,27 @@ definitions:
       user:
         type: string
     type: object
+  dto.UserContainerInfo:
+    properties:
+      command:
+        type: string
+      container_id:
+        type: string
+      created:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      ports:
+        type: string
+      status:
+        type: string
+      username:
+        type: string
+    type: object
   dto.UserLoginInput:
     properties:
       password:
@@ -128,7 +149,12 @@ paths:
         "200":
           description: success
           schema:
-            $ref: '#/definitions/middleware.Response'
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserContainerInfo'
+              type: object
         "500":
           description: Internal Server Error
           schema:

@@ -9,6 +9,12 @@ type UserContainerInfo struct {
 	Id          int    `json:"id" gorm:"column:id"`
 	Username    string `json:"username" gorm:"column:username"`
 	ContainerId string `json:"container_id" gorm:"column:container_id"`
+}
+
+type UserContainerInfoFull struct {
+	Id          int    `json:"id" gorm:"column:id"`
+	Username    string `json:"username" gorm:"column:username"`
+	ContainerId string `json:"container_id" gorm:"column:container_id"`
 	Image       string `json:"image"`
 	Command     string `json:"command"`
 	Created     string `json:"created"`
@@ -18,7 +24,7 @@ type UserContainerInfo struct {
 }
 
 type UserContainerInfoList struct {
-	List []*UserContainerInfo `json:"list"`
+	List []*UserContainerInfoFull `json:"list"`
 }
 
 type MyContainerInfo struct {
@@ -42,4 +48,12 @@ type UserContainerListQueryInput struct {
 
 func (param *UserContainerListQueryInput) BindValidParam(c *gin.Context) error {
 	return public.GetValidParamsDefault(c, param)
+}
+
+type RunContainerParams struct {
+	ImageName     string   `json:"image_name"`
+	DirBinds      []string `json:"dir_binds"`
+	Bash          bool     `json:"bash"`
+	GpuUuids      []string `json:"gpu_uuids"`
+	ContainerName string   `json:"container_name"`
 }

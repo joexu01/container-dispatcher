@@ -8,9 +8,11 @@ import (
 	"github.com/joexu01/container-dispatcher/dao"
 	"github.com/joexu01/container-dispatcher/dto"
 	"github.com/joexu01/container-dispatcher/lib"
+	"github.com/joexu01/container-dispatcher/log"
 	"github.com/joexu01/container-dispatcher/middleware"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -28,7 +30,7 @@ func ContainerControllerRegister(group *gin.RouterGroup) {
 // @Produce      json
 // @Param     page_size   query   int   false   "page size"
 // @Param     page_no     query   int   false   "page no"
-// @Success      200  {object}  middleware.Response "success"
+// @Success      200  {object}  middleware.Response{data=dto.UserContainerInfoList} "success"
 // @Failure      500  {object}  middleware.Response
 // @Router       /container/list [get]
 func (t *ContainerController) ContainerList(c *gin.Context) {
@@ -63,54 +65,67 @@ func (t *ContainerController) ContainerList(c *gin.Context) {
 		return
 	}
 
-	containerInfoMap := make(map[string]*types.Container)
+	containerInfoMap := make(map[string]types.Container)
 
 	for _, container := range containers {
-		c := &container
+		c := container
 		contIdRaw := []rune(c.ID)
 		contId := string(contIdRaw[0:12])
 
 		containerInfoMap[contId] = c
 	}
 
-	//var userConDtoList []*dto.UserContainerInfo
+	for k, v := range containerInfoMap {
+		log.Debug(" Map: key: %+v ; val: %+v\n", k, v)
+	}
+
+	var userConDtoList []*dto.UserContainerInfoFull
 
 	for _, uContainer := range userContainerList {
-		u := &uContainer
-
+		u := uContainer
 		if container, ok := containerInfoMap[uContainer.ContainerId]; ok {
-			u.Command = container.Command
 
 			names := ""
-			for _, n := range container.Names {
-				na := n
-				names = names + na
-				names = names + " | "
+			if len(container.Names) != 1 {
+				for _, n := range container.Names {
+					na := n
+					na = strings.Replace(na, "/", "", -1)
+					names = names + na
+					names = names + " | "
+				}
+			} else {
+				na := strings.Replace(container.Names[0], "/", "", -1)
+				names = na
 			}
-			u.Name = names
-
-			u.Image = container.Image
 
 			portStr := ""
 			for _, port := range container.Ports {
 				p := port
-				ps := fmt.Sprintf("|IP Addr: %s; Container Port: %d; Host Port: %d; Type: %s |", p.IP, p.PrivatePort, p.PublicPort, p.Type)
+				ps := fmt.Sprintf("IP Addr:%s;Host Port:%d;Container Port: %d/%s | ", p.IP, p.PublicPort, p.PrivatePort, p.Type)
 				portStr = portStr + ps
 			}
-			u.Ports = portStr
-
-			u.Status = container.Status
-
 			createdSec := strconv.Itoa(int(container.Created)) + "s"
 			duration, err := time.ParseDuration(createdSec)
 			if err == nil {
 				createdSec = duration.String()
 			}
-			u.Created = createdSec
+
+			ucInfo := &dto.UserContainerInfoFull{
+				Id:          u.Id,
+				Username:    u.Username,
+				ContainerId: u.ContainerId,
+				Image:       container.Image,
+				Command:     container.Command,
+				Created:     createdSec,
+				Status:      container.Status,
+				Ports:       portStr,
+				Name:        names,
+			}
+			userConDtoList = append(userConDtoList, ucInfo)
 		}
 	}
 
-	middleware.ResponseSuccess(c, userContainerList)
+	middleware.ResponseSuccess(c, &dto.UserContainerInfoList{List: userConDtoList})
 }
 
 func (t *ContainerController) RunContainer(c *gin.Context) {
