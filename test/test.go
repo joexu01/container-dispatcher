@@ -2,20 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/joexu01/container-dispatcher/dao"
-	"github.com/joexu01/container-dispatcher/dto"
-	"github.com/joexu01/container-dispatcher/log"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	"github.com/NVIDIA/go-nvml/pkg/nvml"
+	"log"
 )
 
 func main() {
-	connStr := "root:atk_2018@tcp(127.0.0.1:3306)/container-dev?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err := gorm.Open(mysql.Open(connStr), &gorm.Config{})
-	if err != nil {
-		panic(err)
-	}
+	//connStr := "root:atk_2018@tcp(127.0.0.1:3306)/container-dev?charset=utf8mb4&parseTime=True&loc=Local"
+	//db, err := gorm.Open(mysql.Open(connStr), &gorm.Config{})
+	//if err != nil {
+	//	panic(err)
+	//}
 	//
 	//userInsert := dto.NewUserInput{
 	//	Username:    "joexu01",
@@ -60,79 +56,68 @@ func main() {
 
 	//fmt.Printf("%s", string("hello\n\n\n"))
 	//
-	//ret := nvml.Init()
-	//if ret != nvml.SUCCESS {
-	//	log.Fatalf("Unable to initialize NVML: %v", nvml.ErrorString(ret))
-	//}
-	//defer func() {
-	//	ret := nvml.Shutdown()
-	//	if ret != nvml.SUCCESS {
-	//		log.Fatalf("Unable to shutdown NVML: %v", nvml.ErrorString(ret))
-	//	}
-	//}()
-	//
-	//count, ret := nvml.DeviceGetCount()
-	//if ret != nvml.SUCCESS {
-	//	log.Fatalf("Unable to get device count: %v", nvml.ErrorString(ret))
-	//}
-	//
-	//for i := 0; i < count; i++ {
-	//	device, ret := nvml.DeviceGetHandleByIndex(i)
-	//	if ret != nvml.SUCCESS {
-	//		log.Fatalf("Unable to get device at index %d: %v", i, nvml.ErrorString(ret))
-	//	}
-	//
-	//	uuid, ret := device.GetUUID()
-	//	if ret != nvml.SUCCESS {
-	//		log.Fatalf("Unable to get uuid of device at index %d: %v", i, nvml.ErrorString(ret))
-	//	}
-	//
-	//	name, ret := device.GetName()
-	//	if ret != nvml.SUCCESS {
-	//		log.Fatalf("Unable to get name of device at index %d: %v", i, nvml.ErrorString(ret))
-	//	}
-	//
-	//	fmt.Printf("%+v\n", name)
-	//
-	//	arch, ret := device.GetArchitecture()
-	//	if ret != nvml.SUCCESS {
-	//		log.Fatalf("Unable to get profile info of device at index %d: %v", i, nvml.ErrorString(ret))
-	//	}
-	//	fmt.Printf("%+v\n", arch)
-	//
-	//	busType, _ := device.GetBusType()
-	//	fmt.Printf("Bus Type: %+v\n", busType)
-	//
-	//	memoryInfo, _ := device.GetMemoryInfo()
-	//	fmt.Printf("Memory Info: %+v\n", memoryInfo)
-	//
-	//	powerUsage, _ := device.GetPowerUsage()
-	//	fmt.Printf("Power Usage: %+v\n", powerUsage)
-	//
-	//	powerState, _ := device.GetPowerState()
-	//	fmt.Printf("Power State: %+v\n", powerState)
-	//
-	//	managementDefaultLimit, _ := device.GetPowerManagementDefaultLimit()
-	//	fmt.Printf("Power Managment Default Limit: %+v\n", managementDefaultLimit)
-	//
-	//	version, _ := device.GetInforomImageVersion()
-	//	fmt.Printf("Info Image Version: %+v\n", version)
-	//
-	//	driverVersion, _ := nvml.SystemGetDriverVersion()
-	//	fmt.Printf("Driver Version: %+v\n", driverVersion)
-	//
-	//	cudaDriverVersion, _ := nvml.SystemGetCudaDriverVersion()
-	//	fmt.Printf("CUDA Driver Version: %+v\n", cudaDriverVersion)
-	//
-	//	fmt.Printf("%v\n", uuid)
-	//
-	//	computeRunningProcesses, _ := device.GetGraphicsRunningProcesses()
-	//	for _, proc := range computeRunningProcesses {
-	//		fmt.Printf("Proc: %+v\n", proc)
-	//	}
-	//}
-	//
-	//fmt.Println()
+	ret := nvml.Init()
+	if ret != nvml.SUCCESS {
+		log.Fatalf("Unable to initialize NVML: %v", nvml.ErrorString(ret))
+	}
+	defer func() {
+		ret := nvml.Shutdown()
+		if ret != nvml.SUCCESS {
+			log.Fatalf("Unable to shutdown NVML: %v", nvml.ErrorString(ret))
+		}
+	}()
+
+	count, ret := nvml.DeviceGetCount()
+	if ret != nvml.SUCCESS {
+		log.Fatalf("Unable to get device count: %v", nvml.ErrorString(ret))
+	}
+
+	for i := 0; i < count; i++ {
+		device, ret := nvml.DeviceGetHandleByIndex(i)
+		if ret != nvml.SUCCESS {
+			log.Fatalf("Unable to get device at index %d: %v", i, nvml.ErrorString(ret))
+		}
+
+		uuid, ret := device.GetUUID()
+		if ret != nvml.SUCCESS {
+			log.Fatalf("Unable to get uuid of device at index %d: %v", i, nvml.ErrorString(ret))
+		}
+		fmt.Printf("GPU UUID: %v\n", uuid)
+
+		name, ret := device.GetName()
+		if ret != nvml.SUCCESS {
+			log.Fatalf("Unable to get name of device at index %d: %v", i, nvml.ErrorString(ret))
+		}
+		fmt.Printf("GPU Name: %+v\n", name)
+
+		memoryInfo, _ := device.GetMemoryInfo()
+		fmt.Printf("Memory Info: %+v\n", memoryInfo)
+
+		powerUsage, _ := device.GetPowerUsage()
+		fmt.Printf("Power Usage: %+v\n", powerUsage)
+
+		powerState, _ := device.GetPowerState()
+		fmt.Printf("Power State: %+v\n", powerState)
+
+		managementDefaultLimit, _ := device.GetPowerManagementDefaultLimit()
+		fmt.Printf("Power Managment Default Limit: %+v\n", managementDefaultLimit)
+
+		version, _ := device.GetInforomImageVersion()
+		fmt.Printf("Info Image Version: %+v\n", version)
+
+		driverVersion, _ := nvml.SystemGetDriverVersion()
+		fmt.Printf("Driver Version: %+v\n", driverVersion)
+
+		cudaDriverVersion, _ := nvml.SystemGetCudaDriverVersion()
+		fmt.Printf("CUDA Driver Version: %+v\n", cudaDriverVersion)
+
+		computeRunningProcesses, _ := device.GetGraphicsRunningProcesses()
+		for _, proc := range computeRunningProcesses {
+			fmt.Printf("Proc: %+v\n", proc)
+		}
+	}
+
+	fmt.Println()
 	//
 	//proc, _ := process.NewProcess(386485)
 	//name, _ := proc.Cmdline()
@@ -153,14 +138,14 @@ func main() {
 	//	fmt.Println()
 	//}
 
-	u := &dao.ContainerUser{}
-	info, err := u.GetContainerList(&gin.Context{}, db, &dto.UserContainerListQueryInput{
-		PageNo:   1,
-		PageSize: 20,
-	})
-	if err != nil {
-		log.Fatal("%+v\n\n", err)
-	}
-
-	fmt.Printf("%+v\n", info)
+	//u := &dao.ContainerUser{}
+	//info, err := u.GetContainerList(&gin.Context{}, db, &dto.UserContainerListQueryInput{
+	//	PageNo:   1,
+	//	PageSize: 20,
+	//})
+	//if err != nil {
+	//	log.Fatal("%+v\n\n", err)
+	//}
+	//
+	//fmt.Printf("%+v\n", info)
 }

@@ -1,4 +1,23 @@
+basePath: /api/v1
 definitions:
+  dto.AlgorithmParams:
+    properties:
+      author_id:
+        example: 0
+        type: integer
+      desc:
+        example: 测试算法描述
+        type: string
+      entry_point:
+        example: start.py
+        type: string
+      exec_binary:
+        example: python3
+        type: string
+      name:
+        example: 测试算法
+        type: string
+    type: object
   dto.GPUList:
     properties:
       count:
@@ -76,7 +95,30 @@ definitions:
       user:
         type: string
     type: object
-  dto.UserContainerInfo:
+  dto.RunContainerParams:
+    properties:
+      bash:
+        type: boolean
+      container_name:
+        type: string
+      dir_binds:
+        items:
+          type: string
+        type: array
+      entry_point:
+        items:
+          type: string
+        type: array
+      gpu_uuids:
+        items:
+          type: string
+        type: array
+      image_name:
+        type: string
+      save_to_dir:
+        type: string
+    type: object
+  dto.UserContainerInfoFull:
     properties:
       command:
         type: string
@@ -96,6 +138,13 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  dto.UserContainerInfoList:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/dto.UserContainerInfoFull'
+        type: array
     type: object
   dto.UserLoginInput:
     properties:
@@ -128,9 +177,82 @@ definitions:
       stack: {}
       trace_id: {}
     type: object
+host: localhost:8880
 info:
-  contact: {}
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Example API
+  version: "1.0"
 paths:
+  /algorithm/new:
+    post:
+      description: 新建攻击算法
+      parameters:
+      - description: 上传新算法的必备参数
+        in: body
+        name: struct
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AlgorithmParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 新建攻击算法
+      tags:
+      - algorithm
+  /algorithm/upload:
+    post:
+      description: 上传攻击所需要的文件
+      parameters:
+      - description: 攻击算法的ID
+        in: query
+        name: at_id
+        required: true
+        type: string
+      - description: 上传的文件
+        in: formData
+        name: upload[]
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 上传攻击所需要的文件
+      tags:
+      - algorithm
   /container/list:
     get:
       description: 获取我的容器列表
@@ -153,13 +275,42 @@ paths:
             - $ref: '#/definitions/middleware.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/dto.UserContainerInfo'
+                  $ref: '#/definitions/dto.UserContainerInfoList'
               type: object
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.Response'
       summary: 获取我的容器列表
+      tags:
+      - container
+  /container/run:
+    post:
+      description: 测试-运行任务容器
+      parameters:
+      - description: 运行容器的必备参数
+        in: body
+        name: struct
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RunContainerParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 测试-运行任务容器
       tags:
       - container
   /image/list:
@@ -325,4 +476,7 @@ paths:
       summary: 用户注册（仅限管理员）
       tags:
       - user
+securityDefinitions:
+  BasicAuth:
+    type: basic
 swagger: "2.0"

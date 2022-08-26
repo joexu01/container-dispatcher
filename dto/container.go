@@ -56,4 +56,10 @@ type RunContainerParams struct {
 	Bash          bool     `json:"bash"`
 	GpuUuids      []string `json:"gpu_uuids"`
 	ContainerName string   `json:"container_name"`
+	EntryPoint    []string `json:"entry_point"`
+	SaveToDir     string   `json:"save_to_dir"`
+}
+
+func (param *RunContainerParams) BindValidParam(c *gin.Context) error {
+	return public.GetValidParamsDefault(c, param)
 }

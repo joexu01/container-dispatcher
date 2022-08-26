@@ -10,12 +10,124 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/algorithm/new": {
+            "post": {
+                "description": "新建攻击算法",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "algorithm"
+                ],
+                "summary": "新建攻击算法",
+                "parameters": [
+                    {
+                        "description": "上传新算法的必备参数",
+                        "name": "struct",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AlgorithmParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/algorithm/upload": {
+            "post": {
+                "description": "上传攻击所需要的文件",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "algorithm"
+                ],
+                "summary": "上传攻击所需要的文件",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "攻击算法的ID",
+                        "name": "at_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "上传的文件",
+                        "name": "upload[]",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/container/list": {
             "get": {
                 "description": "获取我的容器列表",
@@ -52,7 +164,56 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.UserContainerInfo"
+                                            "$ref": "#/definitions/dto.UserContainerInfoList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/container/run": {
+            "post": {
+                "description": "测试-运行任务容器",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "container"
+                ],
+                "summary": "测试-运行任务容器",
+                "parameters": [
+                    {
+                        "description": "运行容器的必备参数",
+                        "name": "struct",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RunContainerParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
                                         }
                                     }
                                 }
@@ -333,6 +494,31 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.AlgorithmParams": {
+            "type": "object",
+            "properties": {
+                "author_id": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "desc": {
+                    "type": "string",
+                    "example": "测试算法描述"
+                },
+                "entry_point": {
+                    "type": "string",
+                    "example": "start.py"
+                },
+                "exec_binary": {
+                    "type": "string",
+                    "example": "python3"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "测试算法"
+                }
+            }
+        },
         "dto.GPUList": {
             "type": "object",
             "properties": {
@@ -450,7 +636,42 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UserContainerInfo": {
+        "dto.RunContainerParams": {
+            "type": "object",
+            "properties": {
+                "bash": {
+                    "type": "boolean"
+                },
+                "container_name": {
+                    "type": "string"
+                },
+                "dir_binds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "entry_point": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "gpu_uuids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "image_name": {
+                    "type": "string"
+                },
+                "save_to_dir": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserContainerInfoFull": {
             "type": "object",
             "properties": {
                 "command": {
@@ -479,6 +700,17 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.UserContainerInfoList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserContainerInfoFull"
+                    }
                 }
             }
         },
@@ -525,17 +757,22 @@ const docTemplate = `{
                 "trace_id": {}
             }
         }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8880",
+	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Example API",
+	Description:      "This is a sample server.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }

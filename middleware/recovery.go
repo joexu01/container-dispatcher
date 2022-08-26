@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joexu01/container-dispatcher/lib"
 	"github.com/joexu01/container-dispatcher/public"
+	"net/http"
 	"runtime/debug"
 	"strings"
 )
@@ -23,11 +24,11 @@ func RecoveryMiddleware() gin.HandlerFunc {
 					"stack": stack,
 				})
 
-				if lib.ConfBase.DebugMode != "debug" {
-					ResponseError(c, 500, errors.New("内部错误"))
+				if lib.ConfBase.DebugMode == "debug" {
+					ResponseWithCode(c, http.StatusInternalServerError, 2000, errors.New("internal error"), "")
 					return
 				} else {
-					ResponseError(c, 500, errors.New(fmt.Sprint(err)))
+					ResponseWithCode(c, http.StatusInternalServerError, 2000, errors.New(fmt.Sprint(err)), "")
 					return
 				}
 			}

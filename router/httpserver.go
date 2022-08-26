@@ -6,6 +6,7 @@ import (
 	"github.com/joexu01/container-dispatcher/lib"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -23,6 +24,8 @@ func HttpServerRun() {
 		WriteTimeout:   time.Duration(lib.GetIntConf("base.http.write_timeout")) * time.Second,
 		MaxHeaderBytes: 1 << uint(lib.GetIntConf("base.http.max_header_bytes")),
 	}
+	pwd, _ := os.Getwd()
+	log.Printf(" [INFO] Present Working Directory: %s\n", pwd)
 	go func() {
 		log.Printf(" [INFO] HttpServerRun:%s\n", lib.GetStringConf("base.http.addr"))
 		if err := HttpSrvHandler.ListenAndServe(); err != nil {
@@ -50,6 +53,9 @@ func HttpsServerRun() {
 		WriteTimeout:   time.Duration(lib.GetIntConf("base.http.write_timeout")) * time.Second,
 		MaxHeaderBytes: 1 << uint(lib.GetIntConf("base.http.max_header_bytes")),
 	}
+
+	pwd, _ := os.Getwd()
+	log.Printf(" [INFO] Present Working Directory: %s\n", pwd)
 	go func() {
 		log.Printf(" [INFO] HttpServerRun:%s\n", lib.GetStringConf("base.http.addr"))
 		if err := HttpSrvHandler.ListenAndServeTLS("certs/server.pem", "certs/private.key"); err != nil {

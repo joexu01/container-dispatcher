@@ -13,6 +13,9 @@ allow_ip = [                        # 白名单ip列表
     "192.168.1.1"
 ]
 
+[attack_file]
+directory = "./static/attack/"
+
 [log]
 log_level = "trace"         #日志打印最低级别
 

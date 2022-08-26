@@ -22,3 +22,14 @@ $ go run main.go
 [bcrypt](https://pkg.go.dev/golang.org/x/crypto/bcrypt)
 
 
+---
+
+**攻击算法管理**
+
+攻击算法
+
+Parameters:
+
+- 用户上传的模型 - 我是不是直接传递个文件路径就好了
+
+- 数据集 - 这个怎么办：用户自己编写dataloader函数？

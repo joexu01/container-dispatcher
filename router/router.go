@@ -34,9 +34,13 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.Host = lib.GetStringConf("base.swagger.host")
 	docs.SwaggerInfo.BasePath = lib.GetStringConf("base.swagger.base_path")
-	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+	docs.SwaggerInfo.Schemes = []string{"https"}
 
 	router := gin.Default()
+
+	// set s lower memory limit for multipart forms
+	router.MaxMultipartMemory = 8 << 20 // 8 MiB
+
 	router.Use(middlewares...)
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -65,7 +69,7 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		middleware.RecoveryMiddleware(),
 		middleware.RequestLog(),
 		middleware.ValidatorBasicMiddleware(),
-		//middleware.SessionAuthMiddleware(),
+		middleware.SessionAuthMiddleware(),
 	)
 	{
 		controller.UserLogoutRegister(userGroup)
@@ -105,6 +109,18 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 	)
 	{
 		controller.ContainerControllerRegister(ctnGroup)
+	}
+
+	algorithmGroup := router.Group("/algorithm")
+	algorithmGroup.Use(
+		sessions.Sessions("gin-session", store),
+		middleware.RecoveryMiddleware(),
+		middleware.RequestLog(),
+		middleware.ValidatorBasicMiddleware(),
+		middleware.SessionAuthMiddleware(),
+	)
+	{
+		controller.AlgorithmControllerRegister(algorithmGroup)
 	}
 
 	return router

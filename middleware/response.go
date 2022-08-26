@@ -37,7 +37,7 @@ func ResponseWithCode(c *gin.Context, status int, errorCode ResponseCode, err er
 		traceId = traceContext.TraceId
 	}
 	stack := ""
-	if errorCode != SuccessCode {
+	if status != http.StatusOK {
 		if c.Query("is_debug") == "1" || lib.GetConfEnv() == "dev" {
 			stack = strings.Replace(fmt.Sprintf("%+v", err), err.Error()+"\n", "", -1)
 		}
@@ -50,7 +50,7 @@ func ResponseWithCode(c *gin.Context, status int, errorCode ResponseCode, err er
 		TraceId:   traceId,
 		Stack:     stack,
 	}
-	c.JSON(status, resp)
+	//c.JSON(status, resp)
 	response, _ := json.Marshal(resp)
 	c.Set("response", string(response))
 	if status != http.StatusOK {
