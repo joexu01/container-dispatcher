@@ -52,18 +52,19 @@ func (i *ImageController) ImagesList(c *gin.Context) {
 			rs := []rune(id)
 			id = string(rs[0:12])
 		}
-		createdSec := strconv.Itoa(int(i.Created)) + "s"
-		duration, err := time.ParseDuration(createdSec)
-		if err == nil {
-			createdSec = duration.String()
-		}
+		cTime := time.Unix(i.Created, 0).String()
+		//createdSec := strconv.Itoa(int(i.Created)) + "s"
+		//duration, err := time.ParseDuration(createdSec)
+		//if err == nil {
+		//	createdSec = duration.String()
+		//}
 		s := i.Size / (1024 * 1024)
 		size := strconv.Itoa(int(s)) + "MB"
 
 		imgInfo := &dto.ImageInfo{
 			Repo:    repo,
 			ImageId: id,
-			Created: createdSec,
+			Created: cTime,
 			Size:    size,
 		}
 		imageList = append(imageList, imgInfo)

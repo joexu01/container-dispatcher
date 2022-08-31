@@ -8,16 +8,16 @@ import (
 )
 
 type Algorithm struct {
-	//Id         int    `json:"id" gorm:"column:id"`\
-	Uuid       string    `json:"uuid" gorm:"column:uuid;primary_key"`
-	Name       string    `json:"name" gorm:"column:name"`
-	Desc       string    `json:"desc" gorm:"column:desc"`
-	Path       string    `json:"path" gorm:"column:path"`
-	EntryPoint string    `json:"entry_point" gorm:"column:entry_point"`
-	ExecBinary string    `json:"exec_binary" gorm:"column:exec_binary"`
-	AuthorId   int       `json:"author_id" gorm:"column:author_id"`
-	CreatedAt  time.Time `json:"created_at" gorm:"column:created_at"`
-	Files      string    `json:"files" gorm:"column:files"`
+	Uuid             string    `json:"uuid" gorm:"column:uuid;primary_key"`
+	Name             string    `json:"name" gorm:"column:name"`
+	Desc             string    `json:"desc" gorm:"column:desc"`
+	Path             string    `json:"path" gorm:"column:path"`
+	EntryPoint       string    `json:"entry_point" gorm:"column:entry_point"`
+	ExecBinary       string    `json:"exec_binary" gorm:"column:exec_binary"`
+	AuthorId         int       `json:"author_id" gorm:"column:author_id"`
+	CreatedAt        time.Time `json:"created_at" gorm:"column:created_at"`
+	Files            string    `json:"files" gorm:"column:files"`
+	DefaultImageName string    `json:"default_image_name" gorm:"column:default_image_name"`
 }
 
 func (a *Algorithm) TableName() string {
@@ -35,7 +35,6 @@ func (a *Algorithm) Find(_ *gin.Context, tx *gorm.DB, search *Algorithm) (*Algor
 
 func (a *Algorithm) PageList(_ *gin.Context, tx *gorm.DB, param *dto.AlgorithmListQueryInput) (total int64, algoList []AlgorithmResult, err error) {
 	query := tx.Table(a.TableName()).Joins("join user on user.id = algorithm.author_id")
-	// .Where("user.is_delete=0")
 
 	offset := (param.PageNo - 1) * param.PageSize
 	//Limit(param.PageSize).Offset(offset)
@@ -55,14 +54,15 @@ func (a *Algorithm) Update(_ *gin.Context, tx *gorm.DB) error {
 }
 
 type AlgorithmResult struct {
-	Uuid       string    `json:"uuid" gorm:"column:uuid;primary_key"`
-	Name       string    `json:"name" gorm:"column:name"`
-	Desc       string    `json:"desc" gorm:"column:desc"`
-	Path       string    `json:"path" gorm:"column:path"`
-	EntryPoint string    `json:"entry_point" gorm:"column:entry_point"`
-	ExecBinary string    `json:"exec_binary" gorm:"column:exec_binary"`
-	AuthorId   int       `json:"author_id" gorm:"column:author_id"`
-	CreatedAt  time.Time `json:"created_at" gorm:"column:created_at"`
-	Files      string    `json:"files" gorm:"column:files"`
-	Username   string    `json:"username" gorm:"column:username"`
+	Uuid             string    `json:"uuid" gorm:"column:uuid;primary_key"`
+	Name             string    `json:"name" gorm:"column:name"`
+	Desc             string    `json:"desc" gorm:"column:desc"`
+	Path             string    `json:"path" gorm:"column:path"`
+	EntryPoint       string    `json:"entry_point" gorm:"column:entry_point"`
+	ExecBinary       string    `json:"exec_binary" gorm:"column:exec_binary"`
+	AuthorId         int       `json:"author_id" gorm:"column:author_id"`
+	CreatedAt        time.Time `json:"created_at" gorm:"column:created_at"`
+	Files            string    `json:"files" gorm:"column:files"`
+	Username         string    `json:"username" gorm:"column:username"`
+	DefaultImageName string    `json:"default_image_name" gorm:"column:default_image_name"`
 }

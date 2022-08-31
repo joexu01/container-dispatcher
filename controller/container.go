@@ -9,7 +9,6 @@ import (
 	"github.com/joexu01/container-dispatcher/dao"
 	"github.com/joexu01/container-dispatcher/dto"
 	"github.com/joexu01/container-dispatcher/lib"
-	"github.com/joexu01/container-dispatcher/log"
 	"github.com/joexu01/container-dispatcher/middleware"
 	"net/http"
 	"strconv"
@@ -77,9 +76,9 @@ func (t *ContainerController) ContainerList(c *gin.Context) {
 		containerInfoMap[contId] = c
 	}
 
-	for k, v := range containerInfoMap {
-		log.Debug(" Map: key: %+v ; val: %+v\n", k, v)
-	}
+	//for k, v := range containerInfoMap {
+	//	log.Debug(" Map: key: %+v ; val: %+v\n", k, v)
+	//}
 
 	var userConDtoList []*dto.UserContainerInfoFull
 

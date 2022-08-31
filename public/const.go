@@ -8,4 +8,11 @@ const (
 
 	UserRoleUser  = 1
 	UserRoleAdmin = 2
+
+	TaskStatusReady    = "Ready"
+	TaskStatusRunning  = "Running"
+	TaskStatusError    = "Error"
+	TaskStatusComplete = "Complete"
+
+	TaskStatusContainerCreated = "Container Created"
 )

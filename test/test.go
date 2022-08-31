@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/NVIDIA/go-nvml/pkg/nvml"
-	"log"
+	"github.com/joexu01/container-dispatcher/log"
+	"io/ioutil"
 )
 
 func main() {
@@ -56,68 +56,68 @@ func main() {
 
 	//fmt.Printf("%s", string("hello\n\n\n"))
 	//
-	ret := nvml.Init()
-	if ret != nvml.SUCCESS {
-		log.Fatalf("Unable to initialize NVML: %v", nvml.ErrorString(ret))
-	}
-	defer func() {
-		ret := nvml.Shutdown()
-		if ret != nvml.SUCCESS {
-			log.Fatalf("Unable to shutdown NVML: %v", nvml.ErrorString(ret))
-		}
-	}()
-
-	count, ret := nvml.DeviceGetCount()
-	if ret != nvml.SUCCESS {
-		log.Fatalf("Unable to get device count: %v", nvml.ErrorString(ret))
-	}
-
-	for i := 0; i < count; i++ {
-		device, ret := nvml.DeviceGetHandleByIndex(i)
-		if ret != nvml.SUCCESS {
-			log.Fatalf("Unable to get device at index %d: %v", i, nvml.ErrorString(ret))
-		}
-
-		uuid, ret := device.GetUUID()
-		if ret != nvml.SUCCESS {
-			log.Fatalf("Unable to get uuid of device at index %d: %v", i, nvml.ErrorString(ret))
-		}
-		fmt.Printf("GPU UUID: %v\n", uuid)
-
-		name, ret := device.GetName()
-		if ret != nvml.SUCCESS {
-			log.Fatalf("Unable to get name of device at index %d: %v", i, nvml.ErrorString(ret))
-		}
-		fmt.Printf("GPU Name: %+v\n", name)
-
-		memoryInfo, _ := device.GetMemoryInfo()
-		fmt.Printf("Memory Info: %+v\n", memoryInfo)
-
-		powerUsage, _ := device.GetPowerUsage()
-		fmt.Printf("Power Usage: %+v\n", powerUsage)
-
-		powerState, _ := device.GetPowerState()
-		fmt.Printf("Power State: %+v\n", powerState)
-
-		managementDefaultLimit, _ := device.GetPowerManagementDefaultLimit()
-		fmt.Printf("Power Managment Default Limit: %+v\n", managementDefaultLimit)
-
-		version, _ := device.GetInforomImageVersion()
-		fmt.Printf("Info Image Version: %+v\n", version)
-
-		driverVersion, _ := nvml.SystemGetDriverVersion()
-		fmt.Printf("Driver Version: %+v\n", driverVersion)
-
-		cudaDriverVersion, _ := nvml.SystemGetCudaDriverVersion()
-		fmt.Printf("CUDA Driver Version: %+v\n", cudaDriverVersion)
-
-		computeRunningProcesses, _ := device.GetGraphicsRunningProcesses()
-		for _, proc := range computeRunningProcesses {
-			fmt.Printf("Proc: %+v\n", proc)
-		}
-	}
-
-	fmt.Println()
+	//ret := nvml.Init()
+	//if ret != nvml.SUCCESS {
+	//	log.Fatalf("Unable to initialize NVML: %v", nvml.ErrorString(ret))
+	//}
+	//defer func() {
+	//	ret := nvml.Shutdown()
+	//	if ret != nvml.SUCCESS {
+	//		log.Fatalf("Unable to shutdown NVML: %v", nvml.ErrorString(ret))
+	//	}
+	//}()
+	//
+	//count, ret := nvml.DeviceGetCount()
+	//if ret != nvml.SUCCESS {
+	//	log.Fatalf("Unable to get device count: %v", nvml.ErrorString(ret))
+	//}
+	//
+	//for i := 0; i < count; i++ {
+	//	device, ret := nvml.DeviceGetHandleByIndex(i)
+	//	if ret != nvml.SUCCESS {
+	//		log.Fatalf("Unable to get device at index %d: %v", i, nvml.ErrorString(ret))
+	//	}
+	//
+	//	uuid, ret := device.GetUUID()
+	//	if ret != nvml.SUCCESS {
+	//		log.Fatalf("Unable to get uuid of device at index %d: %v", i, nvml.ErrorString(ret))
+	//	}
+	//	fmt.Printf("GPU UUID: %v\n", uuid)
+	//
+	//	name, ret := device.GetName()
+	//	if ret != nvml.SUCCESS {
+	//		log.Fatalf("Unable to get name of device at index %d: %v", i, nvml.ErrorString(ret))
+	//	}
+	//	fmt.Printf("GPU Name: %+v\n", name)
+	//
+	//	memoryInfo, _ := device.GetMemoryInfo()
+	//	fmt.Printf("Memory Info: %+v\n", memoryInfo)
+	//
+	//	powerUsage, _ := device.GetPowerUsage()
+	//	fmt.Printf("Power Usage: %+v\n", powerUsage)
+	//
+	//	powerState, _ := device.GetPowerState()
+	//	fmt.Printf("Power State: %+v\n", powerState)
+	//
+	//	managementDefaultLimit, _ := device.GetPowerManagementDefaultLimit()
+	//	fmt.Printf("Power Managment Default Limit: %+v\n", managementDefaultLimit)
+	//
+	//	version, _ := device.GetInforomImageVersion()
+	//	fmt.Printf("Info Image Version: %+v\n", version)
+	//
+	//	driverVersion, _ := nvml.SystemGetDriverVersion()
+	//	fmt.Printf("Driver Version: %+v\n", driverVersion)
+	//
+	//	cudaDriverVersion, _ := nvml.SystemGetCudaDriverVersion()
+	//	fmt.Printf("CUDA Driver Version: %+v\n", cudaDriverVersion)
+	//
+	//	computeRunningProcesses, _ := device.GetGraphicsRunningProcesses()
+	//	for _, proc := range computeRunningProcesses {
+	//		fmt.Printf("Proc: %+v\n", proc)
+	//	}
+	//}
+	//
+	//fmt.Println()
 	//
 	//proc, _ := process.NewProcess(386485)
 	//name, _ := proc.Cmdline()
@@ -148,4 +148,13 @@ func main() {
 	//}
 	//
 	//fmt.Printf("%+v\n", info)
+
+	fileInfos, err := ioutil.ReadDir("/home/joseph/repo")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	for idx, f := range fileInfos {
+		fmt.Printf("%d: %+v \n\n", idx, f)
+	}
 }

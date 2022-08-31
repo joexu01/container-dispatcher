@@ -6,11 +6,11 @@ import (
 )
 
 type AlgorithmParams struct {
-	Name       string `json:"name" gorm:"column:name" example:"测试算法"`
-	Desc       string `json:"desc" gorm:"column:desc" example:"测试算法描述"`
-	EntryPoint string `json:"entry_point" gorm:"column:entry_point" example:"start.py"`
-	ExecBinary string `json:"exec_binary" gorm:"column:exec_binary" example:"python3"`
-	AuthorId   int    `json:"author_id" gorm:"column:author_id" example:"0"`
+	Name             string `json:"name" gorm:"column:name" example:"测试算法"`
+	Desc             string `json:"desc" gorm:"column:desc" example:"测试算法描述"`
+	EntryPoint       string `json:"entry_point" gorm:"column:entry_point" example:"start.py"`
+	ExecBinary       string `json:"exec_binary" gorm:"column:exec_binary" example:"python3"`
+	DefaultImageName string `json:"default_image_name" example:"full_env"`
 }
 
 func (param *AlgorithmParams) BindValidParam(c *gin.Context) error {

@@ -69,12 +69,12 @@ func (u *User) Find(_ *gin.Context, tx *gorm.DB, search *User) (*User, error) {
 //
 //}
 
-func (u *User) PageList(_ *gin.Context, tx *gorm.DB, param *dto.UserListQueryInput) (total int64, userList []User, err error) {
+func (u *User) PageList(_ *gin.Context, tx *gorm.DB, param *dto.UserListQueryInput) (total int64, userList []UserInfo, err error) {
 	query := tx.Table(u.TableName()).Joins("join role on user.user_role = role.id").
 		Where("user.is_delete=0")
 
 	offset := (param.PageNo - 1) * param.PageSize
-	if err = query.Limit(param.PageSize).Offset(offset).Order("id desc").Find(&userList).Error; err != gorm.ErrRecordNotFound && err != nil {
+	if err = query.Limit(param.PageSize).Offset(offset).Order("user.id desc").Scan(&userList).Error; err != gorm.ErrRecordNotFound && err != nil {
 		return 0, nil, err
 	}
 	query.Limit(param.PageSize).Offset(offset).Count(&total)
@@ -83,6 +83,17 @@ func (u *User) PageList(_ *gin.Context, tx *gorm.DB, param *dto.UserListQueryInp
 
 func (u *User) Save(_ *gin.Context, tx *gorm.DB) error {
 	return tx.Save(u).Error
+}
+
+type UserInfo struct {
+	Id        int       `json:"id" gorm:"column:user.id"`
+	Username  string    `json:"username" gorm:"column:username"`
+	Email     string    `json:"email" gorm:"column:email"`
+	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
+	IsDelete  int       `json:"is_delete" gorm:"column:is_delete"`
+	UserRole  int       `json:"user_role" gorm:"column:user_role"`
+	Role      string    `json:"role" gorm:"column:desc"`
 }
 
 type Role struct {

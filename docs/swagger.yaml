@@ -1,10 +1,9 @@
-basePath: /api/v1
 definitions:
   dto.AlgorithmParams:
     properties:
-      author_id:
-        example: 0
-        type: integer
+      default_image_name:
+        example: full_env
+        type: string
       desc:
         example: 测试算法描述
         type: string
@@ -67,6 +66,17 @@ definitions:
         items:
           $ref: '#/definitions/dto.ImageInfo'
         type: array
+    type: object
+  dto.NewTaskParameters:
+    properties:
+      algorithm_uuid:
+        type: string
+      desc:
+        example: 测试任务描述
+        type: string
+      name:
+        example: 测试任务
+        type: string
     type: object
   dto.NewUserInput:
     properties:
@@ -177,20 +187,31 @@ definitions:
       stack: {}
       trace_id: {}
     type: object
-host: localhost:8880
 info:
-  contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: This is a sample server.
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
-  title: Example API
-  version: "1.0"
+  contact: {}
 paths:
+  /algorithm/list:
+    get:
+      description: 攻击算法列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 攻击算法列表
+      tags:
+      - algorithm
   /algorithm/new:
     post:
       description: 新建攻击算法
@@ -405,6 +426,163 @@ paths:
       summary: 获取GPU基本的状态
       tags:
       - resource
+  /task/:task_id:
+    get:
+      description: 当前用户任务列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 当前用户任务列表
+      tags:
+      - task
+  /task/list:
+    get:
+      description: 当前用户任务列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 当前用户任务列表
+      tags:
+      - task
+  /task/log/:task_id:
+    get:
+      description: 查看容器运行输出 - docker logs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 查看容器运行输出
+      tags:
+      - task
+  /task/new:
+    post:
+      description: 新建任务
+      parameters:
+      - description: 新建任务参数
+        in: body
+        name: struct
+        required: true
+        schema:
+          $ref: '#/definitions/dto.NewTaskParameters'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 新建任务
+      tags:
+      - task
+  /task/run/:task_id:
+    get:
+      description: 测试-运行任务容器
+      parameters:
+      - description: 运行容器的必备参数
+        in: body
+        name: struct
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RunContainerParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 测试-运行任务容器
+      tags:
+      - task
+  /task/upload:
+    post:
+      description: 上传用户模型文件
+      parameters:
+      - description: Task的ID
+        in: query
+        name: task_id
+        required: true
+        type: string
+      - description: 上传的文件
+        in: formData
+        name: upload[]
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 上传用户模型文件
+      tags:
+      - task
   /user/list:
     get:
       description: 用户列表
@@ -476,7 +654,4 @@ paths:
       summary: 用户注册（仅限管理员）
       tags:
       - user
-securityDefinitions:
-  BasicAuth:
-    type: basic
 swagger: "2.0"

@@ -15,6 +15,10 @@ func (c *ContainerUser) TableName() string {
 	return "container_user"
 }
 
+func (c *ContainerUser) Create(_ *gin.Context, tx *gorm.DB, cu *ContainerUser) error {
+	return tx.Create(cu).Error
+}
+
 //func (c *ContainerUser) RetrieveUserContainerIDs()  {
 //
 //}

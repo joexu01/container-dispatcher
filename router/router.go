@@ -123,5 +123,17 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		controller.AlgorithmControllerRegister(algorithmGroup)
 	}
 
+	taskGroup := router.Group("/task")
+	taskGroup.Use(
+		sessions.Sessions("gin-session", store),
+		middleware.RecoveryMiddleware(),
+		middleware.RequestLog(),
+		middleware.ValidatorBasicMiddleware(),
+		middleware.SessionAuthMiddleware(),
+	)
+	{
+		controller.TaskControllerRegister(taskGroup)
+	}
+
 	return router
 }

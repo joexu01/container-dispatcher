@@ -146,15 +146,16 @@ func (a *AlgorithmController) NewAttackAlgorithm(c *gin.Context) {
 	}
 
 	algo := &dao.Algorithm{
-		Uuid:       uuid,
-		Name:       params.Name,
-		Desc:       params.Desc,
-		Path:       dirName,
-		EntryPoint: params.EntryPoint,
-		ExecBinary: params.ExecBinary,
-		AuthorId:   user.Id,
-		CreatedAt:  time.Now(),
-		Files:      "",
+		Uuid:             uuid,
+		Name:             params.Name,
+		Desc:             params.Desc,
+		Path:             dirName,
+		EntryPoint:       params.EntryPoint,
+		ExecBinary:       params.ExecBinary,
+		AuthorId:         user.Id,
+		CreatedAt:        time.Now(),
+		Files:            "",
+		DefaultImageName: params.DefaultImageName,
 	}
 
 	err = algo.Create(c, db)
@@ -182,7 +183,6 @@ func (a *AlgorithmController) NewAttackAlgorithm(c *gin.Context) {
 // @Description  攻击算法列表
 // @Tags         algorithm
 // @Produce      json
-// @Param        struct body dto.AlgorithmParams true "上传新算法的必备参数"
 // @Success      200  {object}  middleware.Response{data=string} "success"
 // @Failure      500  {object}  middleware.Response
 // @Router       /algorithm/list [get]
