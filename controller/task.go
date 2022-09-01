@@ -17,7 +17,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 	"time"
+)
+
+var (
+	uuidReg  = regexp.MustCompile(`^GPU-*`)
+	indexReg = regexp.MustCompile(`^[0-9]+`)
 )
 
 type TaskController struct{}
@@ -62,7 +69,6 @@ func (t *TaskController) TaskUploadFiles(c *gin.Context) {
 		middleware.ResponseWithCode(c, http.StatusBadRequest, 2006, errors.New("bad request: task not found"), "")
 		return
 	}
-	fmt.Printf("TAAAAAAAAAAAAAAASK: %+v\n", task)
 
 	if task == nil || task.Uuid == "" {
 		middleware.ResponseWithCode(c, http.StatusBadRequest, 2007, errors.New("bad request: task not found"), "")
@@ -316,7 +322,7 @@ func (t *TaskController) TaskDetail(c *gin.Context) {
 // @Description  测试-运行任务容器
 // @Tags         task
 // @Produce      json
-// @Param        struct body dto.RunContainerParams true "运行容器的必备参数"
+// @Param        gpu      query      string   true   "攻击算法的ID"
 // @Success      200  {object}  middleware.Response{data=string} "success"
 // @Failure      500  {object}  middleware.Response
 // @Router       /task/run/:task_id [get]
@@ -325,6 +331,30 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 	if tId == "" {
 		middleware.ResponseWithCode(c, http.StatusBadRequest, 2000, errors.New("invalid task ID"), "")
 		return
+	}
+
+	request := container.DeviceRequest{
+		Driver:       "nvidia",
+		Count:        0,
+		DeviceIDs:    nil,
+		Capabilities: [][]string{{"gpu"}},
+		Options:      nil,
+	}
+
+	var deviceIDs []string
+	gpuUuids := c.Query("gpu")
+	if gpuUuids == "" || len(gpuUuids) < 10 {
+		request.Count = -1
+	} else {
+		uuids := strings.Split(gpuUuids, "_")
+		for _, uuid := range uuids {
+			u := uuid
+			if !uuidReg.MatchString(u) && !indexReg.MatchString(u) {
+				continue
+			}
+			deviceIDs = append(deviceIDs, u)
+		}
+		request.DeviceIDs = deviceIDs
 	}
 
 	db, err := lib.GetGormPool("default")
@@ -396,13 +426,7 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 			Binds:         []string{dirName + ":/workspace"},
 			RestartPolicy: container.RestartPolicy{},
 			ConsoleSize:   [2]uint{},
-			Resources: container.Resources{DeviceRequests: []container.DeviceRequest{{
-				Driver:       "nvidia",
-				Count:        0,
-				DeviceIDs:    []string{"0"},
-				Capabilities: [][]string{{"gpu"}},
-				Options:      nil,
-			}}},
+			Resources:     container.Resources{DeviceRequests: []container.DeviceRequest{request}},
 		},
 		nil, nil, task.Uuid)
 
@@ -470,7 +494,7 @@ func (t *TaskController) ShowTaskLog(c *gin.Context) {
 		ShowStderr: true,
 		Since:      "",
 		Until:      "",
-		Timestamps: true,
+		Timestamps: false,
 		Follow:     false,
 		Tail:       "100",
 		Details:    false,
