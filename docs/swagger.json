@@ -575,13 +575,11 @@
                 "summary": "测试-运行任务容器",
                 "parameters": [
                     {
-                        "description": "运行容器的必备参数",
-                        "name": "struct",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.RunContainerParams"
-                        }
+                        "type": "string",
+                        "description": "攻击算法的ID",
+                        "name": "gpu",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {

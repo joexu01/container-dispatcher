@@ -93,7 +93,7 @@ func (t *TaskController) TaskUploadFiles(c *gin.Context) {
 	}
 
 	form, _ := c.MultipartForm()
-	files := form.File["upload[]"]
+	files := form.File["file"]
 
 	if len(files) == 0 {
 		middleware.ResponseWithCode(c, http.StatusBadRequest, 2012, errors.New("no files uploaded, check your form"), "")

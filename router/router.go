@@ -36,23 +36,24 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 	docs.SwaggerInfo.BasePath = lib.GetStringConf("base.swagger.base_path")
 	docs.SwaggerInfo.Schemes = []string{"https"}
 
-	router := gin.Default()
-
+	r := gin.Default()
 	// set s lower memory limit for multipart forms
-	router.MaxMultipartMemory = 8 << 20 // 8 MiB
+	r.MaxMultipartMemory = 8 << 20 // 8 MiB
+	apiGroup := r.Group("/api")
 
-	router.Use(middlewares...)
-	router.GET("/ping", func(c *gin.Context) {
+	apiGroup.Use(middlewares...)
+	apiGroup.Use(middleware.CORSMiddleWare())
+	apiGroup.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	apiGroup.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	store := sessions.NewCookieStore([]byte("secret"))
 
 	// User Login
-	loginGroup := router.Group("")
+	loginGroup := apiGroup.Group("")
 	loginGroup.Use(
 		sessions.Sessions("gin-session", store),
 		middleware.RecoveryMiddleware(),
@@ -63,7 +64,7 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		controller.UserControllerRegister(loginGroup)
 	}
 
-	userGroup := router.Group("/user")
+	userGroup := apiGroup.Group("/user")
 	userGroup.Use(
 		sessions.Sessions("gin-session", store),
 		middleware.RecoveryMiddleware(),
@@ -75,7 +76,7 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		controller.UserLogoutRegister(userGroup)
 	}
 
-	resourceGroup := router.Group("/resource")
+	resourceGroup := apiGroup.Group("/resource")
 	resourceGroup.Use(
 		sessions.Sessions("gin-session", store),
 		middleware.RecoveryMiddleware(),
@@ -87,7 +88,7 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		controller.ResourceControllerRegister(resourceGroup)
 	}
 
-	imageGroup := router.Group("/image")
+	imageGroup := apiGroup.Group("/image")
 	imageGroup.Use(
 		sessions.Sessions("gin-session", store),
 		middleware.RecoveryMiddleware(),
@@ -99,7 +100,7 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		controller.ImageControllerRegister(imageGroup)
 	}
 
-	ctnGroup := router.Group("/container")
+	ctnGroup := apiGroup.Group("/container")
 	ctnGroup.Use(
 		sessions.Sessions("gin-session", store),
 		middleware.RecoveryMiddleware(),
@@ -111,7 +112,7 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		controller.ContainerControllerRegister(ctnGroup)
 	}
 
-	algorithmGroup := router.Group("/algorithm")
+	algorithmGroup := apiGroup.Group("/algorithm")
 	algorithmGroup.Use(
 		sessions.Sessions("gin-session", store),
 		middleware.RecoveryMiddleware(),
@@ -123,7 +124,7 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		controller.AlgorithmControllerRegister(algorithmGroup)
 	}
 
-	taskGroup := router.Group("/task")
+	taskGroup := apiGroup.Group("/task")
 	taskGroup.Use(
 		sessions.Sessions("gin-session", store),
 		middleware.RecoveryMiddleware(),
@@ -135,5 +136,5 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 		controller.TaskControllerRegister(taskGroup)
 	}
 
-	return router
+	return r
 }

@@ -50,12 +50,12 @@ func ResponseWithCode(c *gin.Context, status int, errorCode ResponseCode, err er
 		TraceId:   traceId,
 		Stack:     stack,
 	}
-	//c.JSON(status, resp)
+	c.JSON(status, resp)
 	response, _ := json.Marshal(resp)
 	c.Set("response", string(response))
-	if status != http.StatusOK {
-		_ = c.AbortWithError(status, err)
-	}
+	//if status != http.StatusOK {
+	//	_ = c.AbortWithError(status, err)
+	//}
 }
 
 func ResponseSuccess(c *gin.Context, data interface{}) {
