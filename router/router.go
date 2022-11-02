@@ -34,7 +34,7 @@ func InitRouter(middlewares ...gin.HandlerFunc) *gin.Engine {
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.Host = lib.GetStringConf("base.swagger.host")
 	docs.SwaggerInfo.BasePath = lib.GetStringConf("base.swagger.base_path")
-	docs.SwaggerInfo.Schemes = []string{"https"}
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
 	r := gin.Default()
 	// set s lower memory limit for multipart forms

@@ -1,11 +1,13 @@
 package controller
 
 import (
+	bytes2 "bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	uuidPkg "github.com/google/uuid"
@@ -15,6 +17,7 @@ import (
 	"github.com/joexu01/container-dispatcher/middleware"
 	"github.com/joexu01/container-dispatcher/public"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -322,7 +325,7 @@ func (t *TaskController) TaskDetail(c *gin.Context) {
 // @Description  测试-运行任务容器
 // @Tags         task
 // @Produce      json
-// @Param        gpu      query      string   true   "攻击算法的ID"
+// @Param        gpu      query      string   true   "GPU UUID"
 // @Success      200  {object}  middleware.Response{data=string} "success"
 // @Failure      500  {object}  middleware.Response
 // @Router       /task/run/:task_id [get]
@@ -356,6 +359,8 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 		}
 		request.DeviceIDs = deviceIDs
 	}
+
+	log.Println("Device Request ----", request)
 
 	db, err := lib.GetGormPool("default")
 	if err != nil {
@@ -431,6 +436,11 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 		nil, nil, task.Uuid)
 
 	if err != nil {
+		log.Println("Cmd ----", algorithm.ExecBinary, algorithm.EntryPoint)
+		log.Println("Image Name ----", task.ImageName)
+		log.Println("Binds ----", dirName+":/workspace")
+		log.Println("Binds ----", dirName+":/workspace")
+
 		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2008, err, "")
 		return
 	}
@@ -499,18 +509,27 @@ func (t *TaskController) ShowTaskLog(c *gin.Context) {
 		Tail:       "100",
 		Details:    false,
 	})
+	defer containerLogs.Close()
 
 	if err != nil {
 		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2009, err, "")
 		return
 	}
 
-	bytes, err := ioutil.ReadAll(containerLogs)
+	bufLog := new(bytes2.Buffer)
+
+	_, _ = stdcopy.StdCopy(bufLog, bufLog, containerLogs)
+
+	bytes, err := ioutil.ReadAll(bufLog)
 	if err != nil {
 		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2011, err, "")
 		return
 	}
-	_ = containerLogs.Close()
 	logsStr := string(bytes)
-	middleware.ResponseSuccess(c, logsStr)
+
+	split := strings.Split(logsStr, "\n")
+
+	log.Println(split)
+
+	middleware.ResponseSuccess(c, split)
 }

@@ -1,11 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"github.com/joexu01/container-dispatcher/log"
-	"io/ioutil"
-)
-
 func main() {
 	//connStr := "root:atk_2018@tcp(127.0.0.1:3306)/container-dev?charset=utf8mb4&parseTime=True&loc=Local"
 	//db, err := gorm.Open(mysql.Open(connStr), &gorm.Config{})
@@ -149,12 +143,13 @@ func main() {
 	//
 	//fmt.Printf("%+v\n", info)
 
-	fileInfos, err := ioutil.ReadDir("/home/joseph/repo")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	//fileInfos, err := ioutil.ReadDir("/home/joseph/repo")
+	//if err != nil {
+	//	log.Fatal(err.Error())
+	//}
+	//
+	//for idx, f := range fileInfos {
+	//	fmt.Printf("%d: %+v \n\n", idx, f)
+	//}
 
-	for idx, f := range fileInfos {
-		fmt.Printf("%d: %+v \n\n", idx, f)
-	}
 }
