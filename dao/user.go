@@ -31,7 +31,7 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
 	IsDelete  int       `json:"is_delete" gorm:"column:is_delete"`
 	UserRole  int       `json:"user_role" gorm:"column:user_role"`
-	Role      Role      `json:"role" gorm:"foreignKey: UserRole"`
+	Role      string    `json:"role,omitempty" gorm:"column:desc"`
 }
 
 func (u *User) TableName() string {
@@ -43,9 +43,13 @@ func (u *User) PwdCheck(rawPwd string) bool {
 }
 
 // LoginCheck 对用户输入数据进行检查  决定是否允许登陆
-func (u *User) LoginCheck(c *gin.Context, dbConn *gorm.DB, param *dto.UserLoginInput) (*User, error) {
-	userInfo, err := u.Find(c, dbConn, &User{Username: param.Username, IsDelete: 0})
-	if err != nil {
+func (u *User) LoginCheck(_ *gin.Context, dbConn *gorm.DB, param *dto.UserLoginInput) (*User, error) {
+	query := dbConn.Table(u.TableName()).Select("`user`.`id`,`user`.`username`,`user`.`hashed_password`,`user`.`email`,`user`.`created_at`,`user`.`updated_at`,`user`.`is_delete`,`user`.`user_role`,`role`.`desc`").Joins("join role on user.user_role = role.id").
+		Where("user.is_delete=0").
+		Where("user.username=?", param.Username)
+
+	userInfo := &User{}
+	if err := query.First(userInfo).Error; err != nil {
 		return nil, errors.New("用户信息不存在")
 	}
 

@@ -39,8 +39,21 @@ func (param *UserLoginInput) BindValidParam(c *gin.Context) error {
 	return public.GetValidParamsDefault(c, param)
 }
 
+/*
+id: undefined,
+        username: undefined,
+        email: undefined,
+        introduction: undefined,
+        createdAt: undefined,
+        role: ''
+*/
+
 type UserLoginOutput struct {
-	Token string `json:"token" form:"token" comment:"token" example:"token" validate:""` // 返回的Token
+	Id        int       `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"createdAt"`
+	Role      string    `json:"role"`
 }
 
 type NewUserInput struct {

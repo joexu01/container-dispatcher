@@ -66,10 +66,15 @@ func (u *UserController) UserLogin(c *gin.Context) {
 	}
 
 	session := sessions.Default(c)
-	//sessKey := "user_id_" + strconv.Itoa(user.Id)
 	session.Set(public.UserSessionKey, string(bytes))
 	_ = session.Save()
 
-	out := dto.UserLoginOutput{Token: string(bytes)}
+	out := dto.UserLoginOutput{
+		Id:        user.Id,
+		Username:  user.Username,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		Role:      user.Role,
+	}
 	middleware.ResponseSuccess(c, out)
 }
