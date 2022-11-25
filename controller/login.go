@@ -9,6 +9,7 @@ import (
 	"github.com/joexu01/container-dispatcher/lib"
 	"github.com/joexu01/container-dispatcher/middleware"
 	"github.com/joexu01/container-dispatcher/public"
+	"log"
 	"net/http"
 	"time"
 )
@@ -44,8 +45,10 @@ func (u *UserController) UserLogin(c *gin.Context) {
 		return
 	}
 
+	log.Println(params)
+
 	user := &dao.User{}
-	user, err = user.LoginCheck(c, db, params)
+	userInfo, err := user.LoginCheck(c, db, params)
 	if err != nil {
 		middleware.ResponseError(c, 2002, err)
 		return
@@ -54,8 +57,8 @@ func (u *UserController) UserLogin(c *gin.Context) {
 	//c.SetCookie("user_token", "123", 3600, "/", "localhost", false, true)
 
 	sessInfo := &dto.UserSessionInfo{
-		Id:        user.Id,
-		UserName:  user.Username,
+		Id:        userInfo.Id,
+		UserName:  userInfo.Username,
 		LoginTime: time.Now(),
 	}
 
@@ -70,11 +73,11 @@ func (u *UserController) UserLogin(c *gin.Context) {
 	_ = session.Save()
 
 	out := dto.UserLoginOutput{
-		Id:        user.Id,
-		Username:  user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-		Role:      user.Role,
+		Id:        userInfo.Id,
+		Username:  userInfo.Username,
+		Email:     userInfo.Email,
+		CreatedAt: userInfo.CreatedAt,
+		Role:      userInfo.Role,
 	}
 	middleware.ResponseSuccess(c, out)
 }

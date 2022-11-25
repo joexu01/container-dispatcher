@@ -31,32 +31,46 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
 	IsDelete  int       `json:"is_delete" gorm:"column:is_delete"`
 	UserRole  int       `json:"user_role" gorm:"column:user_role"`
-	Role      string    `json:"role,omitempty" gorm:"column:desc"`
 }
 
 func (u *User) TableName() string {
 	return "user"
 }
 
-func (u *User) PwdCheck(rawPwd string) bool {
+func (u *UserInfoWithPwd) PwdCheck(rawPwd string) bool {
 	return public.ComparePwdAndHash([]byte(rawPwd), u.Password)
 }
 
 // LoginCheck 对用户输入数据进行检查  决定是否允许登陆
-func (u *User) LoginCheck(_ *gin.Context, dbConn *gorm.DB, param *dto.UserLoginInput) (*User, error) {
-	query := dbConn.Table(u.TableName()).Select("`user`.`id`,`user`.`username`,`user`.`hashed_password`,`user`.`email`,`user`.`created_at`,`user`.`updated_at`,`user`.`is_delete`,`user`.`user_role`,`role`.`desc`").Joins("join role on user.user_role = role.id").
+func (u *User) LoginCheck(_ *gin.Context, dbConn *gorm.DB, param *dto.UserLoginInput) (*UserInfoWithPwd, error) {
+	query := dbConn.Table(u.TableName()).Select("user.id,user.username,user.hashed_password,user.email,user.created_at,user.updated_at,user.is_delete,user.user_role,role.desc").
+		Joins("join role on user.user_role = role.id").
 		Where("user.is_delete=0").
-		Where("user.username=?", param.Username)
+		Where("user.username=?", param.Username).
+		Order("user.id desc")
 
-	userInfo := &User{}
-	if err := query.First(userInfo).Error; err != nil {
-		return nil, errors.New("用户信息不存在")
+	userInfo := &UserInfoWithPwd{}
+	if err := query.Scan(userInfo).Error; err != nil {
+		return nil, err
 	}
 
 	if !userInfo.PwdCheck(param.Password) {
 		return nil, errors.New("密码错误")
 	}
 
+	return userInfo, nil
+}
+
+func (u *User) GetMyInfo(_ *gin.Context, dbConn *gorm.DB, userId int) (*UserInfo, error) {
+	query := dbConn.Table(u.TableName()).Select("user.id,user.username,user.hashed_password,user.email,user.created_at,user.updated_at,user.is_delete,user.user_role,role.desc").
+		Joins("join role on user.user_role = role.id").
+		Where("user.is_delete=0").
+		Where("user.id=?", userId)
+
+	userInfo := &UserInfo{}
+	if err := query.Scan(userInfo).Error; err != nil {
+		return nil, err
+	}
 	return userInfo, nil
 }
 
@@ -74,7 +88,9 @@ func (u *User) Find(_ *gin.Context, tx *gorm.DB, search *User) (*User, error) {
 //}
 
 func (u *User) PageList(_ *gin.Context, tx *gorm.DB, param *dto.UserListQueryInput) (total int64, userList []UserInfo, err error) {
-	query := tx.Table(u.TableName()).Joins("join role on user.user_role = role.id").
+	query := tx.Table(u.TableName()).
+		Select("user.id,user.username,user.hashed_password,user.email,user.created_at,user.updated_at,user.is_delete,user.user_role,role.desc").
+		Joins("join role on user.user_role = role.id").
 		Where("user.is_delete=0")
 
 	offset := (param.PageNo - 1) * param.PageSize
@@ -90,14 +106,26 @@ func (u *User) Save(_ *gin.Context, tx *gorm.DB) error {
 }
 
 type UserInfo struct {
-	Id        int       `json:"id" gorm:"column:user.id"`
+	Id        int       `json:"id" gorm:"column:id"`
 	Username  string    `json:"username" gorm:"column:username"`
 	Email     string    `json:"email" gorm:"column:email"`
 	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
 	IsDelete  int       `json:"is_delete" gorm:"column:is_delete"`
 	UserRole  int       `json:"user_role" gorm:"column:user_role"`
-	Role      string    `json:"role" gorm:"column:desc"`
+	Role      string    `json:"role,omitempty" gorm:"column:desc"`
+}
+
+type UserInfoWithPwd struct {
+	Id        int       `json:"id" gorm:"column:id"`
+	Username  string    `json:"username" gorm:"column:username"`
+	Email     string    `json:"email" gorm:"column:email"`
+	Password  string    `json:"password" gorm:"column:hashed_password"`
+	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
+	IsDelete  int       `json:"is_delete" gorm:"column:is_delete"`
+	UserRole  int       `json:"user_role" gorm:"column:user_role"`
+	Role      string    `json:"role,omitempty" gorm:"column:desc"`
 }
 
 type Role struct {
