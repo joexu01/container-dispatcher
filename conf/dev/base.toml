@@ -19,6 +19,9 @@ directory = "/home/joseph/repo/container-dispatcher/static/attack/"
 [task_file]
 directory = "/home/joseph/repo/container-dispatcher/static/task/"
 
+[image_file]
+directory = "/home/joseph/repo/container-dispatcher/static/image/"
+
 [log]
 log_level = "trace"         #日志打印最低级别
 
