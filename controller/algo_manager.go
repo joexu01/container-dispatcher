@@ -199,11 +199,13 @@ func (a *AlgorithmController) ListAttackAlgorithms(c *gin.Context) {
 	}
 
 	handler := &dao.Algorithm{}
-	_, algoList, err := handler.PageList(c, db, params)
+	total, algoList, err := handler.PageList(c, db, params)
 	if err != nil {
 		middleware.ResponseError(c, 2005, err)
 		return
 	}
 
-	middleware.ResponseSuccess(c, algoList)
+	out := &dao.AlgorithmWrapper{Total: total, List: &algoList}
+
+	middleware.ResponseSuccess(c, out)
 }

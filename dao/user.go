@@ -137,3 +137,8 @@ type Role struct {
 func (r *Role) TableName() string {
 	return "role"
 }
+
+type UserListWrapper struct {
+	Total int64       `json:"total"`
+	List  *[]UserInfo `json:"list"`
+}

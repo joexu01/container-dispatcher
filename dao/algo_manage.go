@@ -66,3 +66,8 @@ type AlgorithmResult struct {
 	Username         string    `json:"username" gorm:"column:username"`
 	DefaultImageName string    `json:"default_image_name" gorm:"column:default_image_name"`
 }
+
+type AlgorithmWrapper struct {
+	Total int64              `json:"total"`
+	List  *[]AlgorithmResult `json:"list"`
+}

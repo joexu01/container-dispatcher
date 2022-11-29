@@ -172,13 +172,18 @@ func (u *UserLogoutController) UserList(c *gin.Context) {
 	}
 
 	handler := &dao.User{}
-	_, userList, err := handler.PageList(c, db, params)
+	total, userList, err := handler.PageList(c, db, params)
 	if err != nil {
 		middleware.ResponseError(c, 2005, err)
 		return
 	}
 
-	middleware.ResponseSuccess(c, userList)
+	out := &dao.UserListWrapper{
+		Total: total,
+		List:  &userList,
+	}
+
+	middleware.ResponseSuccess(c, out)
 }
 
 // UserDelete godoc

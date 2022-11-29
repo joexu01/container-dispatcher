@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -245,13 +246,33 @@ func (t *TaskController) ListTasks(c *gin.Context) {
 	}
 
 	handler := &dao.Task{}
-	_, taskList, err := handler.PageList(c, db, params, user.Id)
+	total, taskList, err := handler.PageList(c, db, params, user.Id)
 	if err != nil {
 		middleware.ResponseError(c, 2007, err)
 		return
 	}
 
-	middleware.ResponseSuccess(c, taskList)
+	cli, err := lib.NewDockerClient("default")
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2003, err, "")
+		return
+	}
+	defer func(Client *client.Client) {
+		_ = Client.Close()
+	}(cli.Client)
+
+	for _, taskPointer := range taskList {
+		t := taskPointer
+		inspect, err := cli.Client.ContainerInspect(c, t.ContainerId)
+		if err != nil {
+			t.ContainerStatus = "removed or not created"
+			continue
+		}
+		t.ContainerStatus = inspect.State.Status
+	}
+
+	out := &dao.TaskListWrapper{Total: total, List: &taskList}
+	middleware.ResponseSuccess(c, out)
 }
 
 // TaskDetail godoc
@@ -307,6 +328,9 @@ func (t *TaskController) TaskDetail(c *gin.Context) {
 			middleware.ResponseWithCode(c, http.StatusInternalServerError, 2003, err, "")
 			return
 		}
+		defer func(Client *client.Client) {
+			_ = Client.Close()
+		}(cli.Client)
 
 		inspect, err := cli.Client.ContainerInspect(c, task.ContainerId)
 		if err != nil {
@@ -416,6 +440,12 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2007, err, "")
 		return
 	}
+	defer func(Client *client.Client) {
+		err := Client.Close()
+		if err != nil {
+			log.Println("UploadImage Handler Error:", err.Error())
+		}
+	}(dockerClient.Client)
 
 	resp, err := dockerClient.Client.ContainerCreate(c,
 		&container.Config{
@@ -460,7 +490,7 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 		errMessage += err.Error()
 	}
 
-	middleware.ResponseSuccess(c, fmt.Sprintf("Container Created, while handling task, some error may occur: %v", errMessage))
+	middleware.ResponseSuccess(c, fmt.Sprintf("Container Created, %v", errMessage))
 }
 
 // ShowTaskLog godoc
@@ -498,6 +528,12 @@ func (t *TaskController) ShowTaskLog(c *gin.Context) {
 		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2007, err, "")
 		return
 	}
+	defer func(Client *client.Client) {
+		err := Client.Close()
+		if err != nil {
+			log.Println("UploadImage Handler Error:", err.Error())
+		}
+	}(dockerClient.Client)
 
 	containerLogs, err := dockerClient.Client.ContainerLogs(c, task.ContainerId, types.ContainerLogsOptions{
 		ShowStdout: true,

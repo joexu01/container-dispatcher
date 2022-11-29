@@ -1,7 +1,8 @@
 package dto
 
 type ImageList struct {
-	List []*ImageInfo
+	Total int64
+	List  []*ImageInfo
 }
 
 type ImageInfo struct {

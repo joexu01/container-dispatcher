@@ -57,7 +57,7 @@ func (t *Task) Find(_ *gin.Context, tx *gorm.DB, taskUuid string) (*Task, error)
 	return out, nil
 }
 
-func (t *Task) PageList(_ *gin.Context, tx *gorm.DB, param *dto.TaskListQueryInput, userID int) (total int64, algoList []TaskQueryResult, err error) {
+func (t *Task) PageList(_ *gin.Context, tx *gorm.DB, param *dto.TaskListQueryInput, userID int) (total int64, algoList []*TaskQueryResult, err error) {
 	query := tx.Select("task.uuid, task.task_name, task.task_desc, task.algorithm_uuid, task.user_id, task.uploaded_files, task.status, task.created_at, task.image_name, task.container_id, user.username, algorithm.name").
 		Table(t.TableName()).
 		Joins("join user on user.id = task.user_id").
@@ -97,4 +97,9 @@ type TaskQueryResult struct {
 
 	Username      string `json:"username" gorm:"column:username"`
 	AlgorithmName string `json:"algorithm_name" gorm:"column:name"`
+}
+
+type TaskListWrapper struct {
+	Total int64               `json:"total"`
+	List  *[]*TaskQueryResult `json:"list"`
 }
