@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/joexu01/container-dispatcher/dao"
@@ -25,6 +26,8 @@ func UserLogoutRegister(group *gin.RouterGroup) {
 	group.GET("/list", user.UserList)
 	group.GET("/delete/:user_id", user.UserDelete)
 	group.GET("/me", user.UserMe)
+
+	group.GET("/debug/get", user.PrintGetRequest)
 }
 
 // UserLogout godoc
@@ -299,4 +302,24 @@ func (u *UserLogoutController) UserMe(c *gin.Context) {
 	}
 
 	middleware.ResponseSuccess(c, out)
+}
+
+// PrintGetRequest godoc
+// @Summary      获取我的信息（仅限管理员）
+// @Description  获取我的信息
+// @Tags         user
+// @Produce      json
+// @Success      200  {object}  middleware.Response "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /user/debug/get [get]
+func (u *UserLogoutController) PrintGetRequest(c *gin.Context) {
+	out := fmt.Sprintf(`
+<html>
+	<p>RemoteIP: %s</p>
+	<p>Request: %+v</p>
+</html>`, c.RemoteIP(), c.Request)
+
+	log.Println(out)
+
+	c.String(200, out)
 }

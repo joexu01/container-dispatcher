@@ -12,7 +12,21 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+func init() {
+	_ = updateGpuCacheList()
+}
+
+var (
+	GPUSelectionCacheList GpuCacheList
+)
+
+type GpuCacheList struct {
+	List []*dto.GPUCache
+	sync.RWMutex
+}
 
 type ResourceController struct{}
 
@@ -20,7 +34,8 @@ func ResourceControllerRegister(group *gin.RouterGroup) {
 	res := &ResourceController{}
 	group.GET("/gpu", res.ResourceGPUList)
 	group.GET("/cpu", res.ResourceCPUList)
-	//group.GET("/gpu/proc")
+	group.GET("/gpu/cache/update", res.UpdateGPUSelectionList)
+	group.GET("/gpu/cache", res.GetGPUSelectionList)
 }
 
 // ResourceGPUList godoc
@@ -131,4 +146,69 @@ func (r *ResourceController) ResourceCPUList(c *gin.Context) {
 	}
 
 	middleware.ResponseSuccess(c, rawInfo)
+}
+
+// UpdateGPUSelectionList godoc
+// @Summary      更新 GPU 选项缓存
+// @Description  更新 GPU 选项缓存
+// @Tags         resource
+// @Produce      json
+// @Success      200  {object}  middleware.Response "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /resource/gpu/cache/update [get]
+func (r *ResourceController) UpdateGPUSelectionList(c *gin.Context) {
+	if err := updateGpuCacheList(); err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2000, err, "")
+	}
+
+	middleware.ResponseSuccess(c, "成功更新GPU选项列表")
+}
+
+func updateGpuCacheList() error {
+	ret := nvml.Init()
+	if ret != nvml.SUCCESS {
+		return errors.New("failed to initialize nvidia sdk")
+	}
+	defer func() {
+		_ = nvml.Shutdown()
+	}()
+
+	var GpuCacheSlice []*dto.GPUCache
+	count, _ := nvml.DeviceGetCount()
+
+	for gpuIdx := 0; gpuIdx < count; gpuIdx++ {
+		deviceHandler, _ := nvml.DeviceGetHandleByIndex(gpuIdx)
+		uuid, _ := deviceHandler.GetUUID()
+		name, _ := deviceHandler.GetName()
+
+		g := &dto.GPUCache{
+			Uuid:       uuid,
+			DeviceName: name,
+		}
+
+		GpuCacheSlice = append(GpuCacheSlice, g)
+	}
+
+	GPUSelectionCacheList.Lock()
+	GPUSelectionCacheList.List = GpuCacheSlice
+	GPUSelectionCacheList.Unlock()
+	return nil
+}
+
+// GetGPUSelectionList godoc
+// @Summary      获取 GPU 选项缓存
+// @Description  获取 GPU 选项缓存
+// @Tags         resource
+// @Produce      json
+// @Success      200  {object}  middleware.Response "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /resource/gpu/cache [get]
+func (r *ResourceController) GetGPUSelectionList(c *gin.Context) {
+	var cacheList []*dto.GPUCache
+
+	GPUSelectionCacheList.RLock()
+	defer GPUSelectionCacheList.RUnlock()
+	cacheList = GPUSelectionCacheList.List
+
+	middleware.ResponseSuccess(c, cacheList)
 }

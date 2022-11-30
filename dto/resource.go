@@ -44,3 +44,8 @@ type LSCPUData struct {
 	Field string `json:"field"`
 	Data  string `json:"data"`
 }
+
+type GPUCache struct {
+	Uuid       string `json:"uuid"`
+	DeviceName string `json:"device_name"`
+}

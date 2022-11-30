@@ -360,6 +360,8 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 		return
 	}
 
+	var resources *container.Resources
+
 	request := container.DeviceRequest{
 		Driver:       "nvidia",
 		Count:        0,
@@ -370,18 +372,25 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 
 	var deviceIDs []string
 	gpuUuids := c.Query("gpu")
-	if gpuUuids == "" || len(gpuUuids) < 10 {
-		request.Count = -1
+
+	if gpuUuids == "none" {
+		resources = &container.Resources{}
 	} else {
-		uuids := strings.Split(gpuUuids, "_")
-		for _, uuid := range uuids {
-			u := uuid
-			if !uuidReg.MatchString(u) && !indexReg.MatchString(u) {
-				continue
+		if gpuUuids == "" || len(gpuUuids) < 10 {
+			request.Count = -1
+			resources = &container.Resources{DeviceRequests: []container.DeviceRequest{request}}
+		} else {
+			uuids := strings.Split(gpuUuids, "_")
+			for _, uuid := range uuids {
+				u := uuid
+				if !uuidReg.MatchString(u) && !indexReg.MatchString(u) {
+					continue
+				}
+				deviceIDs = append(deviceIDs, u)
 			}
-			deviceIDs = append(deviceIDs, u)
+			request.DeviceIDs = deviceIDs
+			resources = &container.Resources{DeviceRequests: []container.DeviceRequest{request}}
 		}
-		request.DeviceIDs = deviceIDs
 	}
 
 	log.Println("Device Request ----", request)
@@ -461,7 +470,7 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 			Binds:         []string{dirName + ":/workspace"},
 			RestartPolicy: container.RestartPolicy{},
 			ConsoleSize:   [2]uint{},
-			Resources:     container.Resources{DeviceRequests: []container.DeviceRequest{request}},
+			Resources:     *resources,
 		},
 		nil, nil, task.Uuid)
 
