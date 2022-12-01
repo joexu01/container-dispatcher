@@ -15,4 +15,7 @@ const (
 	TaskStatusComplete = "Complete"
 
 	TaskStatusContainerCreated = "Container Created"
+
+	FileTreeNodeTypeDir  = "dir"
+	FileTreeNodeTypeFile = "file"
 )

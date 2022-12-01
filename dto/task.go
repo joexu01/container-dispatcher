@@ -23,3 +23,8 @@ type TaskListQueryInput struct {
 func (param *TaskListQueryInput) BindValidParam(c *gin.Context) error {
 	return public.GetValidParamsDefault(c, param)
 }
+
+type DirFileInfo struct {
+	Files []string `json:"files"`
+	Count int      `json:"count"`
+}

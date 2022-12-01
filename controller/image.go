@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -25,6 +26,7 @@ func ImageControllerRegister(group *gin.RouterGroup) {
 	group.GET("/list", img.ImagesList)
 	group.POST("/upload", img.UploadImage)
 	group.GET("/remove/:image_id", img.RemoveImage)
+	group.GET("/pull", img.PullImage)
 }
 
 // ImagesList godoc
@@ -96,7 +98,7 @@ func (i *ImageController) ImagesList(c *gin.Context) {
 // @Description  上传镜像
 // @Tags         image
 // @Produce      json
-// @Success      200  {object}  middleware.Response{data=json} "success"
+// @Success      200  {object}  middleware.Response{data=string} "success"
 // @Failure      500  {object}  middleware.Response
 // @Router       /image/upload [post]
 func (i *ImageController) UploadImage(c *gin.Context) {
@@ -168,7 +170,7 @@ func (i *ImageController) UploadImage(c *gin.Context) {
 // @Description  上传镜像
 // @Tags         image
 // @Produce      json
-// @Success      200  {object}  middleware.Response{data=json} "success"
+// @Success      200  {object}  middleware.Response{data=string} "success"
 // @Failure      500  {object}  middleware.Response
 // @Router       /image/remove/:image_id [get]
 func (i *ImageController) RemoveImage(c *gin.Context) {
@@ -202,4 +204,54 @@ func (i *ImageController) RemoveImage(c *gin.Context) {
 	log.Printf("%+v\n", deleteResponseItems)
 
 	middleware.ResponseSuccess(c, "已经删除镜像")
+}
+
+// PullImage godoc
+// @Summary      上传镜像
+// @Description  上传镜像
+// @Tags         image
+// @Produce      json
+// @Success      200  {object}  middleware.Response{data=string} "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /image/pull?image=xxx&tag=x.x.x [get]
+func (i *ImageController) PullImage(c *gin.Context) {
+	imageName := c.Query("image")
+	tag := c.Query("tag")
+
+	if len(imageName) < 1 || len(tag) < 1 {
+		middleware.ResponseError(c, 2001, errors.New("请求参数错误，请检查镜像名称和tag"))
+		return
+	}
+
+	imageStr := imageName + ":" + tag
+
+	go func(imageRef string) {
+		ctx, cancelFunc := context.WithTimeout(context.Background(), 60*time.Minute)
+		defer cancelFunc()
+
+		go func() {
+			dockerClient, err := lib.NewDockerClient("default")
+			if err != nil {
+				return
+			}
+			defer func(Client *client.Client) {
+				_ = Client.Close()
+			}(dockerClient.Client)
+
+			_, _ = dockerClient.Client.ImagePull(ctx, imageRef, types.ImagePullOptions{
+				All:           false,
+				RegistryAuth:  "",
+				PrivilegeFunc: nil,
+				Platform:      "",
+			})
+		}()
+
+		select {
+		case <-ctx.Done():
+			return
+		}
+
+	}(imageStr)
+
+	middleware.ResponseSuccess(c, "正在拉取镜像，网络原因可能拉取失败，本次拉取超时时间1小时")
 }

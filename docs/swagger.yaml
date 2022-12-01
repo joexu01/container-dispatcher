@@ -66,6 +66,8 @@ definitions:
         items:
           $ref: '#/definitions/dto.ImageInfo'
         type: array
+      total:
+        type: integer
     type: object
   dto.NewTaskParameters:
     properties:
@@ -172,9 +174,15 @@ definitions:
     type: object
   dto.UserLoginOutput:
     properties:
-      token:
-        description: 返回的Token
-        example: token
+      createdAt:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      role:
+        type: string
+      username:
         type: string
     type: object
   middleware.Response:
@@ -356,6 +364,50 @@ paths:
       summary: 获取镜像列表
       tags:
       - image
+  /image/remove/:image_id:
+    get:
+      description: 上传镜像
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 上传镜像
+      tags:
+      - image
+  /image/upload:
+    post:
+      description: 上传镜像
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 上传镜像
+      tags:
+      - image
   /login:
     post:
       consumes:
@@ -426,7 +478,41 @@ paths:
       summary: 获取GPU基本的状态
       tags:
       - resource
-  /task/:task_id:
+  /resource/gpu/cache:
+    get:
+      description: 获取 GPU 选项缓存
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/middleware.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 获取 GPU 选项缓存
+      tags:
+      - resource
+  /resource/gpu/cache/update:
+    get:
+      description: 更新 GPU 选项缓存
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/middleware.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 更新 GPU 选项缓存
+      tags:
+      - resource
+  /task/detail/:task_id:
     get:
       description: 当前用户任务列表
       produces:
@@ -446,6 +532,28 @@ paths:
           schema:
             $ref: '#/definitions/middleware.Response'
       summary: 当前用户任务列表
+      tags:
+      - task
+  /task/dir/:task_id:
+    get:
+      description: 返回任务文件夹文件列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 返回任务文件夹文件列表
       tags:
       - task
   /task/list:
@@ -525,7 +633,7 @@ paths:
     get:
       description: 测试-运行任务容器
       parameters:
-      - description: 攻击算法的ID
+      - description: GPU UUID
         in: query
         name: gpu
         required: true
@@ -582,6 +690,40 @@ paths:
       summary: 上传用户模型文件
       tags:
       - task
+  /user/debug/get:
+    get:
+      description: 获取我的信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/middleware.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 获取我的信息（仅限管理员）
+      tags:
+      - user
+  /user/delete/:user_id:
+    get:
+      description: 用户删除
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/middleware.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 用户删除（仅限管理员）
+      tags:
+      - user
   /user/list:
     get:
       description: 用户列表
@@ -625,6 +767,23 @@ paths:
           schema:
             $ref: '#/definitions/middleware.Response'
       summary: 用户登出
+      tags:
+      - user
+  /user/me:
+    get:
+      description: 获取我的信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/middleware.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.Response'
+      summary: 获取我的信息（仅限管理员）
       tags:
       - user
   /user/register:

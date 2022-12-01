@@ -17,14 +17,19 @@ import (
 	"github.com/joexu01/container-dispatcher/lib"
 	"github.com/joexu01/container-dispatcher/middleware"
 	"github.com/joexu01/container-dispatcher/public"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
+
+const GigaByte5 = 5 * 1024 * 1024 * 1024
 
 var (
 	uuidReg  = regexp.MustCompile(`^GPU-*`)
@@ -38,9 +43,13 @@ func TaskControllerRegister(group *gin.RouterGroup) {
 	group.POST("/upload", tc.TaskUploadFiles)
 	group.POST("/new", tc.NewTask)
 	group.GET("/list", tc.ListTasks)
-	group.GET("/:task_id", tc.TaskDetail)
+	group.GET("/detail/:task_id", tc.TaskDetail)
 	group.GET("/run/:task_id", tc.RunTaskTest)
 	group.GET("/log/:task_id", tc.ShowTaskLog)
+
+	group.StaticFS("/file/", gin.Dir(lib.GetStringConf("base.task_file.directory"), true))
+	group.GET("/dir/:task_id", tc.GetTaskFiles)
+	group.GET("/pack", tc.PackAndDownloadFiles)
 }
 
 // TaskUploadFiles godoc
@@ -282,7 +291,7 @@ func (t *TaskController) ListTasks(c *gin.Context) {
 // @Produce      json
 // @Success      200  {object}  middleware.Response{data=string} "success"
 // @Failure      500  {object}  middleware.Response
-// @Router       /task/:task_id [get]
+// @Router       /task/detail/:task_id [get]
 func (t *TaskController) TaskDetail(c *gin.Context) {
 	tId := c.Param("task_id")
 	if tId == "" {
@@ -554,7 +563,9 @@ func (t *TaskController) ShowTaskLog(c *gin.Context) {
 		Tail:       "100",
 		Details:    false,
 	})
-	defer containerLogs.Close()
+	defer func(containerLogs io.ReadCloser) {
+		_ = containerLogs.Close()
+	}(containerLogs)
 
 	if err != nil {
 		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2009, err, "")
@@ -577,4 +588,107 @@ func (t *TaskController) ShowTaskLog(c *gin.Context) {
 	log.Println(split)
 
 	middleware.ResponseSuccess(c, split)
+}
+
+// GetTaskFiles godoc
+// @Summary      返回任务文件夹文件列表
+// @Description  返回任务文件夹文件列表
+// @Tags         task
+// @Produce      json
+// @Success      200  {object}  middleware.Response{data=string} "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /task/dir/:task_id [get]
+func (t *TaskController) GetTaskFiles(c *gin.Context) {
+	tId := c.Param("task_id")
+	if tId == "" {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2000, errors.New("invalid task ID"), "")
+		return
+	}
+
+	dirName := lib.GetStringConf("base.task_file.directory") + tId
+
+	exists, err := public.PathExists(dirName)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2008, err, "")
+		return
+	}
+
+	if !exists {
+		middleware.ResponseSuccess(c, &dto.DirFileInfo{})
+	}
+
+	tree := &public.FileTree{
+		Label:    "root",
+		Filepath: "",
+		Children: nil,
+	}
+
+	public.GetFilesWithDirInfo(dirName, "", tree)
+
+	middleware.ResponseSuccess(c, tree)
+}
+
+// PackAndDownloadFiles godoc
+// @Summary      返回任务文件夹文件列表
+// @Description  返回任务文件夹文件列表
+// @Tags         task
+// @Produce      json
+// @Success      200  {object}  middleware.Response{data=string} "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /task/pack?filepath [get]
+func (t *TaskController) PackAndDownloadFiles(c *gin.Context) {
+	dirPath := c.Query("filepath")
+	if len(dirPath) == 0 {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2000, errors.New("无效的文件夹"), "")
+		return
+	}
+
+	dirAbsPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2000, errors.New("无效的文件夹"), "")
+		return
+	}
+
+	if !strings.HasPrefix(dirAbsPath, lib.GetStringConf("base.task_file.directory")) {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2000, errors.New("无效的文件夹"), "")
+		return
+	}
+
+	stat, err := os.Stat(dirAbsPath)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2001, err, "")
+		return
+	}
+	if !stat.IsDir() {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2002, errors.New("文件夹不存在"), "")
+		return
+	}
+
+	dirSizeSum, err := public.DirSizeSum(dirAbsPath)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2003, err, "")
+		return
+	}
+
+	if dirSizeSum > GigaByte5 {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2004, errors.New("文件夹文件未压缩大小超过5GiB"), "")
+		return
+	}
+
+	now := time.Now().UnixNano()
+	dirName := strings.Split(dirAbsPath, `/`)
+	if len(dirName) < 1 {
+		dirName = []string{strconv.FormatInt(now, 10)}
+	}
+	zipFileName := lib.GetStringConf("base.task_file.directory") + dirName[len(dirName)-1] + strconv.FormatInt(now, 10) + ".zip"
+
+	err = public.Zip(zipFileName, dirAbsPath)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2005, err, "")
+		return
+	}
+	defer os.Remove(zipFileName)
+
+	c.Header("Content-Disposition", "attachment; filename="+dirName[len(dirName)-1]+strconv.FormatInt(now, 10)+".zip")
+	c.File(zipFileName)
 }
