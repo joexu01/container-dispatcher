@@ -1,0 +1,10 @@
+{
+  "apps": [
+    {
+      "name": "Container-Dispatcher",
+      "script": "./main >/dev/null 2>&1 &",
+      "max_memory_restart": "32G",
+      "restart_delay": 100000
+    }
+  ]
+}

@@ -26,6 +26,7 @@ func AlgorithmControllerRegister(group *gin.RouterGroup) {
 	group.POST("/upload", ac.AlgorithmUploadNew)
 	group.POST("/new", ac.NewAttackAlgorithm)
 	group.GET("/list", ac.ListAttackAlgorithms)
+	group.GET("/remove/:algo_id", ac.RemoveAlgorithm)
 }
 
 // AlgorithmUploadNew godoc
@@ -208,4 +209,65 @@ func (a *AlgorithmController) ListAttackAlgorithms(c *gin.Context) {
 	out := &dao.AlgorithmWrapper{Total: total, List: &algoList}
 
 	middleware.ResponseSuccess(c, out)
+}
+
+// RemoveAlgorithm godoc
+// @Summary      删除攻击算法
+// @Description  删除攻击算法
+// @Tags         algorithm
+// @Produce      json
+// @Param        struct body dto.AlgorithmParams true "上传新算法的必备参数"
+// @Success      200  {object}  middleware.Response{data=string} "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /algorithm/remove/:algo_id [post]
+func (a *AlgorithmController) RemoveAlgorithm(c *gin.Context) {
+	aId := c.Param("algo_id")
+	if aId == "" {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2000, errors.New("invalid task ID"), "")
+		return
+	}
+
+	db, err := lib.GetGormPool("default")
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2001, err, "")
+		return
+	}
+
+	baseDir := lib.GetStringConf("base.attack_file.directory")
+	dirName := baseDir + aId
+
+	algo := &dao.Algorithm{
+		Uuid: aId,
+	}
+
+	find, err := algo.Find(c, db, algo)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2002, err, "")
+		return
+	}
+
+	find.Path = "已删除"
+
+	var removeOptErr []error
+
+	err = os.RemoveAll(dirName)
+	if err != nil {
+		removeOptErr = append(removeOptErr, err)
+	}
+
+	err = find.Update(c, db)
+	if err != nil {
+		removeOptErr = append(removeOptErr, err)
+	}
+
+	if len(removeOptErr) != 0 {
+		errStr := ""
+		for _, e := range removeOptErr {
+			errStr += e.Error()
+		}
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2003, errors.New(errStr), "")
+		return
+	}
+
+	middleware.ResponseSuccess(c, "算法删除成功")
 }

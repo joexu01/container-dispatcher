@@ -45,7 +45,9 @@ func TaskControllerRegister(group *gin.RouterGroup) {
 	group.GET("/list", tc.ListTasks)
 	group.GET("/detail/:task_id", tc.TaskDetail)
 	group.GET("/run/:task_id", tc.RunTaskTest)
+	group.GET("/stop/:task_id", tc.StopTask)
 	group.GET("/log/:task_id", tc.ShowTaskLog)
+	group.GET("/remove/:task_id", tc.RemoveTask)
 
 	group.StaticFS("/file/", gin.Dir(lib.GetStringConf("base.task_file.directory"), true))
 	group.GET("/dir/:task_id", tc.GetTaskFiles)
@@ -272,6 +274,9 @@ func (t *TaskController) ListTasks(c *gin.Context) {
 
 	for _, taskPointer := range taskList {
 		t := taskPointer
+		if t.Status == public.TaskStatusRemoved {
+			continue
+		}
 		inspect, err := cli.Client.ContainerInspect(c, t.ContainerId)
 		if err != nil {
 			t.ContainerStatus = "removed or not created"
@@ -331,7 +336,7 @@ func (t *TaskController) TaskDetail(c *gin.Context) {
 		return
 	}
 
-	if task.Status == public.TaskStatusContainerCreated && task.ContainerId != "" {
+	if (task.Status == public.TaskStatusContainerCreated || task.Status == public.TaskStatusTerminated) && task.ContainerId != "" {
 		cli, err := lib.NewDockerClient("default")
 		if err != nil {
 			middleware.ResponseWithCode(c, http.StatusInternalServerError, 2003, err, "")
@@ -402,7 +407,7 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 		}
 	}
 
-	log.Println("Device Request ----", request)
+	//log.Println("Device Request ----", request)
 
 	db, err := lib.GetGormPool("default")
 	if err != nil {
@@ -508,7 +513,161 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 		errMessage += err.Error()
 	}
 
-	middleware.ResponseSuccess(c, fmt.Sprintf("Container Created, %v", errMessage))
+	middleware.ResponseSuccess(c, fmt.Sprintf("Container Created! %v", errMessage))
+}
+
+// StopTask godoc
+// @Summary      终止任务容器运行
+// @Description  终止任务容器运行
+// @Tags         task
+// @Produce      json
+// @Param        gpu      query      string   true   "GPU UUID"
+// @Success      200  {object}  middleware.Response{data=string} "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /task/stop/:task_id [get]
+func (t *TaskController) StopTask(c *gin.Context) {
+	tId := c.Param("task_id")
+	if tId == "" {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2000, errors.New("invalid task ID"), "")
+		return
+	}
+
+	db, err := lib.GetGormPool("default")
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2001, err, "")
+		return
+	}
+
+	// get task info
+	searchTask := &dao.Task{}
+	task, err := searchTask.Find(c, db, tId)
+	if err != nil || task.Uuid == "" {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2002, errors.New("task not found"), "")
+		return
+	}
+
+	// get docker client
+	dockerClient, err := lib.NewDockerClient("default")
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2003, err, "")
+		return
+	}
+	defer func(Client *client.Client) {
+		err := Client.Close()
+		if err != nil {
+			log.Println("UploadImage Handler Error:", err.Error())
+		}
+	}(dockerClient.Client)
+
+	timeout := time.Duration(time.Second)
+	err = dockerClient.Client.ContainerStop(c, task.ContainerId, &timeout)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2004, errors.New("停止容器失败"), "")
+		return
+	}
+
+	task.Status = public.TaskStatusTerminated
+	err = task.Update(c, db)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2005, err, "")
+		return
+	}
+
+	middleware.ResponseSuccess(c, "任务已终止，容器停止运行")
+}
+
+// RemoveTask godoc
+// @Summary      删除任务
+// @Description  删除任务
+// @Tags         task
+// @Produce      json
+// @Param        gpu      query      string   true   "GPU UUID"
+// @Success      200  {object}  middleware.Response{data=string} "success"
+// @Failure      500  {object}  middleware.Response
+// @Router       /task/remove/:task_id [get]
+func (t *TaskController) RemoveTask(c *gin.Context) {
+	tId := c.Param("task_id")
+	if tId == "" {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2000, errors.New("invalid task ID"), "")
+		return
+	}
+
+	db, err := lib.GetGormPool("default")
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2001, err, "")
+		return
+	}
+
+	// get task info
+	searchTask := &dao.Task{}
+	task, err := searchTask.Find(c, db, tId)
+	if err != nil || task.Uuid == "" {
+		middleware.ResponseWithCode(c, http.StatusBadRequest, 2002, errors.New("task not found"), "")
+		return
+	}
+
+	var dockerOptsErr []error
+
+	// get docker client
+	if task.ContainerId != "" {
+		dockerClient, err := lib.NewDockerClient("default")
+		if err != nil {
+			middleware.ResponseWithCode(c, http.StatusInternalServerError, 2003, err, "")
+			return
+		}
+		defer func(Client *client.Client) {
+			err := Client.Close()
+			if err != nil {
+				log.Println("Handler Error:", err.Error())
+			}
+		}(dockerClient.Client)
+
+		timeout := time.Duration(time.Second)
+		err = dockerClient.Client.ContainerStop(c, task.ContainerId, &timeout)
+		if err != nil {
+			dockerOptsErr = append(dockerOptsErr, err)
+		}
+
+		err = dockerClient.Client.ContainerRemove(c, task.ContainerId, types.ContainerRemoveOptions{
+			RemoveVolumes: true,
+			RemoveLinks:   false,
+			Force:         false,
+		})
+		if err != nil {
+			dockerOptsErr = append(dockerOptsErr, err)
+		}
+	}
+
+	baseDir := lib.GetStringConf("base.task_file.directory")
+	dirName := baseDir + task.Uuid
+
+	exists, err := public.PathExists(dirName)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2004, err, "")
+		return
+	}
+
+	if exists {
+		err = os.RemoveAll(dirName)
+	}
+
+	task.Status = public.TaskStatusRemoved
+	err = task.Update(c, db)
+	if err != nil {
+		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2005, err, "")
+		return
+	}
+
+	if len(dockerOptsErr) != 0 {
+		var errStr string
+		for _, e := range dockerOptsErr {
+			errStr += e.Error()
+		}
+
+		middleware.ResponseSuccess(c, "任务已删除，但在删除过程中出现了如下错误："+errStr)
+		return
+	}
+	middleware.ResponseSuccess(c, "任务已删除")
 }
 
 // ShowTaskLog godoc
@@ -576,6 +735,8 @@ func (t *TaskController) ShowTaskLog(c *gin.Context) {
 
 	_, _ = stdcopy.StdCopy(bufLog, bufLog, containerLogs)
 
+	//bytes2.NewReader()
+
 	bytes, err := ioutil.ReadAll(bufLog)
 	if err != nil {
 		middleware.ResponseWithCode(c, http.StatusInternalServerError, 2011, err, "")
@@ -588,6 +749,7 @@ func (t *TaskController) ShowTaskLog(c *gin.Context) {
 	log.Println(split)
 
 	middleware.ResponseSuccess(c, split)
+	//c.Stream()
 }
 
 // GetTaskFiles godoc

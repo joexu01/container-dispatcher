@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "Container-Dispatcher-FE",
+      "script": "vite >/dev/null 2>&1 &",
+      "max_memory_restart": "4G"
+    }
+  ]
+}
