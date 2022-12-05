@@ -464,10 +464,7 @@ func (t *TaskController) RunTaskTest(c *gin.Context) {
 		return
 	}
 	defer func(Client *client.Client) {
-		err := Client.Close()
-		if err != nil {
-			log.Println("UploadImage Handler Error:", err.Error())
-		}
+		go Client.Close()
 	}(dockerClient.Client)
 
 	resp, err := dockerClient.Client.ContainerCreate(c,

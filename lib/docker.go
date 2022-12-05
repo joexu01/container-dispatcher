@@ -4,7 +4,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/joexu01/container-dispatcher/log"
 	"golang.org/x/net/context"
 )
 
@@ -14,7 +13,7 @@ type DockerClient struct {
 }
 
 func NewDockerClient(listKey string) (*DockerClient, error) {
-	log.Debug("What! %s\n\n", ConfDockerMap.List[listKey].DockerEndpoint)
+	//log.Debug("What! %s\n\n", ConfDockerMap.List[listKey].DockerEndpoint)
 	cli, err := client.NewClientWithOpts(client.WithHost(ConfDockerMap.List[listKey].DockerEndpoint), client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
